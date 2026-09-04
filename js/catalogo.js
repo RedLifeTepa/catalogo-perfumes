@@ -120,7 +120,7 @@ function prevHero(){if(!heroCandidates.length)return;heroIndex=(heroIndex-1+hero
 async function showProduct(id){
  const p=products.find(x=>x.id===id);if(!p)return;
  const offer=p.oferta&&Number(p.precioOferta||0)>0;
- $("#detail").innerHTML=`<div class="detail"><img src="${img(p)}"><div><div class="category">${p.categoriaNombre||""}</div><h2>${p.nombre}</h2><p class="muted">${p.descripcion||"Sin descripción."}</p>${p.textoPromocion?`<p class="promo-text">${p.textoPromocion}</p>`:""}<div class="prices"><span class="price ${offer?"sale-price":""}">${money(effectivePrice(p))}</span>${offer?`<span class="old-price">${money(p.precioMenudeo)}</span>`:""}</div>${p.precioMayoreo?`<div class="wholesale">Mayoreo desde ${money(p.precioMayoreo)}</div><select id="detailMode" class="mode-select"><option value="menudeo">Menudeo</option><option value="mayoreo">Mayoreo</option></select>`:""}<button id="detailAdd" class="btn btn-gold wide" style="margin-top:10px">Agregar al carrito</button></div></div>`;
+ $("#detail").innerHTML=`<div class="detail"><img src="${img(p)}"><div><div class="category">${p.categoriaNombre||""}</div><h2>${p.nombre}</h2><p class="muted">${p.descripcion||"Sin descripción."}</p>${p.textoPromocion?`<p class="promo-text">${p.textoPromocion}</p>`:""}<div class="prices"><span class="price ${offer?"sale-price":""}">${money(effectivePrice(p))}</span>${offer?`<span class="old-price">${money(p.precioMenudeo)}</span>`:""}</div>${p.precioMayoreo?`<div class="wholesale">Mayoreo desde ${money(p.precioMayoreo)}</div><select id="detailMode" class="mode-select"><option value="menudeo">Menudeo</option><option value="mayoreo">Mayoreo (mínimo 3 unidades)</option></select>`:""}<button id="detailAdd" class="btn btn-gold wide" style="margin-top:10px">Agregar al carrito</button></div></div>`;
  $("#detailModal").classList.add("open");
  $("#detailAdd").onclick=()=>{addCart(id,$("#detailMode")?.value||"menudeo");$("#detailModal").classList.remove("open")};
  try{await updateDoc(doc(db,"productos",id),{numeroVistas:Number(p.numeroVistas||0)+1});p.numeroVistas=Number(p.numeroVistas||0)+1}catch(e){}
@@ -128,17 +128,19 @@ async function showProduct(id){
 
 function addCart(id,mode="menudeo"){
  const p=products.find(x=>x.id===id);if(!p)return;
- const unit=mode==="mayoreo"&&Number(p.precioMayoreo||0)>0?Number(p.precioMayoreo):effectivePrice(p);
+ const isWholesale=mode==="mayoreo"&&Number(p.precioMayoreo||0)>0;
+ const unit=isWholesale?Number(p.precioMayoreo):effectivePrice(p);
  let x=cart.find(i=>i.id===id&&i.mode===mode);
- if(x)x.qty++;else cart.push({id:p.id,nombre:p.nombre,imagen:img(p),mode,qty:1,precio:unit});
+ if(x)x.qty++;else cart.push({id:p.id,nombre:p.nombre,imagen:img(p),mode,qty:isWholesale?3:1,minQty:isWholesale?3:1,precio:unit});
  saveCart();$("#cartDrawer").classList.add("open");
 }
 function saveCart(){localStorage.setItem("aura-cart",JSON.stringify(cart));renderCart()}
 function renderCart(){
+ cart.forEach(x=>{if(x.mode==="mayoreo"&&x.qty<3)x.qty=3});
  const n=cart.reduce((s,x)=>s+x.qty,0),t=cart.reduce((s,x)=>s+x.qty*x.precio,0);
  $("#cartCount").textContent=n;$("#cartTotal").textContent=money(t);
- $("#cartItems").innerHTML=cart.map((x,i)=>`<div class="cart-line"><img src="${x.imagen}"><div><h4>${x.nombre}</h4><small>${x.mode==="mayoreo"?"Mayoreo":"Menudeo"} · ${money(x.precio)}</small><div class="qty"><button data-op="minus" data-i="${i}">−</button><span>${x.qty}</span><button data-op="plus" data-i="${i}">+</button></div></div><button class="remove" data-op="remove" data-i="${i}">✕</button></div>`).join("")||'<p class="muted">Tu carrito está vacío.</p>';
- $("#cartItems").onclick=e=>{let b=e.target.closest("[data-op]");if(!b)return;let i=Number(b.dataset.i);if(b.dataset.op==="plus")cart[i].qty++;if(b.dataset.op==="minus")cart[i].qty=Math.max(1,cart[i].qty-1);if(b.dataset.op==="remove")cart.splice(i,1);saveCart()};
+ $("#cartItems").innerHTML=cart.map((x,i)=>`<div class="cart-line"><img src="${x.imagen}"><div><h4>${x.nombre}</h4><small>${x.mode==="mayoreo"?`Mayoreo · ${money(x.precio)} c/u · mínimo 3`:`Menudeo · ${money(x.precio)}`}</small><div class="qty"><button data-op="minus" data-i="${i}">−</button><span>${x.qty}</span><button data-op="plus" data-i="${i}">+</button></div></div><button class="remove" data-op="remove" data-i="${i}">✕</button></div>`).join("")||'<p class="muted">Tu carrito está vacío.</p>';
+ $("#cartItems").onclick=e=>{let b=e.target.closest("[data-op]");if(!b)return;let i=Number(b.dataset.i);if(b.dataset.op==="plus")cart[i].qty++;if(b.dataset.op==="minus"){let min=cart[i].mode==="mayoreo"?3:1;cart[i].qty=Math.max(min,cart[i].qty-1)}if(b.dataset.op==="remove")cart.splice(i,1);saveCart()};
 }
 
 function renderExtras(){

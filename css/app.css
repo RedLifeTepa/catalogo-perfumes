@@ -49,3 +49,4 @@ button:disabled{opacity:.55;cursor:not-allowed}
 #productos .filters,#inventario .filters{grid-template-columns:minmax(300px,1fr) minmax(220px,320px)!important}
 .table-wrap{width:100%!important;overflow-x:auto!important}
 @media(max-width:760px){.filters,#productos .filters,#inventario .filters{grid-template-columns:1fr!important}.filters input,.filters select,.module-search{height:46px!important}}
+.notice-link{width:100%;text-align:left;color:var(--text);font:inherit;cursor:pointer}.notice-go{margin-left:auto;font-size:25px;color:var(--muted)}.notice-link:hover{box-shadow:0 6px 18px rgba(0,0,0,.08)}

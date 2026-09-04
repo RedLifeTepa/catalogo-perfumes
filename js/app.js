@@ -221,11 +221,11 @@ $("#makeBackup").onclick=makeBackup;$("#saveBackupConfig").onclick=()=>{localSto
 
 async function loadNotifications(){
  try{let [vs,ps,prs]=await Promise.all([getDocs(collection(db,"ventas")),getDocs(collection(db,"pedidos")),getDocs(collection(db,"productos"))]);let v=vs.docs.map(d=>d.data()),p=ps.docs.map(d=>d.data()),pr=prs.docs.map(d=>d.data()),notices=[];
- let debt=v.filter(x=>Number(x.saldo||0)>0);if(debt.length)notices.push({c:"warn",i:"💳",t:`${debt.length} crédito(s) con saldo`,s:`Total pendiente ${mx(debt.reduce((a,x)=>a+Number(x.saldo||0),0))}`});
- let orders=p.filter(x=>x.estado==="nuevo");if(orders.length)notices.push({c:"warn",i:"🛍️",t:`${orders.length} pedido(s) nuevo(s)`,s:"Revisa el módulo Pedidos."});
- let low=pr.filter(x=>x.activo!==false&&Number(x.stock||0)<=Number(x.stockMinimo||0));if(low.length)notices.push({c:"danger",i:"📦",t:`${low.length} producto(s) con stock bajo`,s:"Revisa existencias."});
- if(!notices.length)notices.push({c:"ok",i:"✓",t:"Sin alertas críticas",s:"La operación se encuentra al día."});
- $("#notificationsList").innerHTML=notices.map(n=>`<div class="notice ${n.c}"><div class="notice-icon">${n.i}</div><div><strong>${n.t}</strong><small>${n.s}</small></div></div>`).join("")
+ let debt=v.filter(x=>Number(x.saldo||0)>0);if(debt.length)notices.push({c:"warn",i:"💳",t:`${debt.length} crédito(s) con saldo`,s:`Total pendiente ${mx(debt.reduce((a,x)=>a+Number(x.saldo||0),0))}`,module:"cobranza"});
+ let orders=p.filter(x=>x.estado==="nuevo");if(orders.length)notices.push({c:"warn",i:"🛍️",t:`${orders.length} pedido(s) nuevo(s)`,s:"Toca para revisar Pedidos.",module:"pedidos"});
+ let low=pr.filter(x=>x.activo!==false&&Number(x.stock||0)<=Number(x.stockMinimo||0));if(low.length)notices.push({c:"danger",i:"📦",t:`${low.length} producto(s) con stock bajo`,s:"Toca para revisar Inventario.",module:"inventario"});
+ if(!notices.length)notices.push({c:"ok",i:"✓",t:"Sin alertas críticas",s:"La operación se encuentra al día.",module:"dashboard"});
+ $("#notificationsList").innerHTML=notices.map(n=>`<button type="button" class="notice ${n.c} notice-link" data-module-target="${n.module||"dashboard"}"><div class="notice-icon">${n.i}</div><div><strong>${n.t}</strong><small>${n.s}</small></div><span class="notice-go">›</span></button>`).join("");$$(".notice-link").forEach(b=>b.onclick=()=>{let nav=document.querySelector(`[data-module="${b.dataset.moduleTarget}"]`);if(nav)nav.click()})
  }catch(e){$("#notificationsList").innerHTML='<div class="notice danger">No fue posible generar notificaciones.</div>'}
 }
 const refreshNotificationsBtn=$("#refreshNotifications");if(refreshNotificationsBtn)refreshNotificationsBtn.onclick=loadNotifications;

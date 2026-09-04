@@ -1,18 +1,7 @@
-# AuraERP v1.5.1 - Functional Recovery
+# AuraERP v1.5.2
 
-Corrección integral de regresión detectada después de CRM v1.4.
-
-- Reparado error JavaScript que detenía toda la aplicación después de Productos.
-- Dashboard vuelve a consultar Firebase.
-- Inventario vuelve a cargar y sus botones quedan operativos.
-- CRM avanzado carga clientes y tareas.
-- Pedidos cargan automáticamente.
-- Ventas y Cobranza cargan automáticamente.
-- Reportes vuelven a generar información.
-- Documentos vuelve a cargar selectores.
-- Notificaciones e Inteligencia vuelven a ejecutarse.
-- Sincronización global al iniciar sesión.
-- Sincronización automática y botón global restaurados.
-- Un fallo en un módulo ya no bloquea el resto.
-- Buscadores y filtros ampliados en todos los módulos.
-- Tablas responsive con desplazamiento interno cuando sea necesario.
+- Notificaciones navegables a Pedidos, Cobranza e Inventario.
+- Mayoreo mínimo 3 unidades.
+- Al elegir mayoreo se agregan automáticamente 3.
+- No se puede reducir de 3; sí aumentar libremente.
+- Total usa precio mayoreo por unidad x cantidad.
