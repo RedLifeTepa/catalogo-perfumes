@@ -35,7 +35,7 @@ function renderConfig(){
 
 function renderFilters(){
  const specials=[
-  ["","▦","Todos"],["oferta","🏷️","Ofertas"],["promocion","📣","Promociones"],["destacado","⭐","Destacados"],["nuevo","🟢","Nuevos"],["proximoLanzamiento","🚀","Próximos lanzamientos"],["proximoLanzamiento","🚀","Próximos lanzamientos"]
+  ["","▦","Todos"],["oferta","🏷️","Ofertas"],["promocion","📣","Promociones"],["destacado","⭐","Destacados"],["nuevo","🟢","Nuevos"],["proximoLanzamiento","🚀","Próximos lanzamientos"]
  ];
  $("#chips").innerHTML=specials.map(([v,i,t],n)=>`<button class="chip ${n===0?"active":""}" data-filter="${v}">${i} ${t}</button>`).join("")+
  cats.map(c=>`<button class="chip" data-cat="${c.id}">▣ ${c.nombre}</button>`).join("");

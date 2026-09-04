@@ -249,7 +249,7 @@ async function refreshAllData(silent=false){
   ["categorías",loadCategories],["productos",loadProducts],["inventario",loadInventory],
   ["pedidos",loadOrders],["clientes",loadCRMAdvanced],["ventas",loadSales],
   ["cobranza",loadCollections],["dashboard",loadDashboardReal],["reportes",async()=>{}],
-  ["documentos",loadDocumentCenter],["inteligencia",loadIntelligence],["asistente",loadAIAssistant],["usuarios",loadUsers],
+  ["documentos",loadDocumentCenter],["inteligencia",loadIntelligence],["usuarios",loadUsers],
   ["respaldos",loadBackupsAdvanced],["notificaciones",loadNotifications],["bitácora",loadAudit]
  ];
  const results=await Promise.allSettled(jobs.map(([,fn])=>fn()));
