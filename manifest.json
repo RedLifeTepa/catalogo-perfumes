@@ -1,0 +1,11 @@
+{
+  "name": "AuraERP",
+  "short_name": "AuraERP",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f8fb",
+  "theme_color": "#1e3a5f",
+  "description": "Plataforma comercial para catálogo, CRM, ventas y cobranza.",
+  "lang": "es-MX"
+}

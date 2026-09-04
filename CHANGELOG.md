@@ -1,0 +1,22 @@
+# AuraERP v1.5.0 — Inteligencia Comercial
+
+- Nuevo Centro de Inteligencia Comercial.
+- Ventas por periodo.
+- Comparación contra periodo anterior.
+- Utilidad y margen estimados usando costo de producto.
+- Ticket promedio.
+- Conversión Pedido → Venta.
+- Ranking de productos vendidos.
+- Ranking de productos más vistos.
+- Mejores clientes.
+- Salud de inventario.
+- Tendencia gráfica de ventas.
+- Recomendaciones automáticas:
+  - stock bajo / agotados
+  - productos con vistas pero pocas ventas
+  - margen reducido
+  - baja conversión
+  - cobranza pendiente
+  - clientes inactivos
+- Periodos: 30, 90, 365 días o historial completo.
+- Integrado a sincronización global.
