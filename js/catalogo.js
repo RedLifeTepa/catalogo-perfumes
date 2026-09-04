@@ -35,7 +35,7 @@ function renderConfig(){
 
 function renderFilters(){
  const specials=[
-  ["","▦","Todos"],["oferta","🏷️","Ofertas"],["promocion","📣","Promociones"],["destacado","⭐","Destacados"],["nuevo","🟢","Nuevos"]
+  ["","▦","Todos"],["oferta","🏷️","Ofertas"],["promocion","📣","Promociones"],["destacado","⭐","Destacados"],["nuevo","🟢","Nuevos"],["proximoLanzamiento","🚀","Próximos lanzamientos"]
  ];
  $("#chips").innerHTML=specials.map(([v,i,t],n)=>`<button class="chip ${n===0?"active":""}" data-filter="${v}">${i} ${t}</button>`).join("")+
  cats.map(c=>`<button class="chip" data-cat="${c.id}">▣ ${c.nombre}</button>`).join("");
@@ -74,7 +74,7 @@ function renderProducts(){
      ${p.oferta?'<span class="badge offer">OFERTA</span>':""}
      ${p.promocion?'<span class="badge promo">PROMOCIÓN</span>':""}
      ${p.destacado?'<span class="badge featured">DESTACADO</span>':""}
-     ${p.nuevo?'<span class="badge new">NUEVO</span>':""}
+     ${p.nuevo?'<span class="badge new">NUEVO</span>':""}${p.proximoLanzamiento?'<span class="badge upcoming">PRÓXIMAMENTE</span>':""}
     </div>
     <img src="${img(p)}" alt="${p.nombre||"Producto"}" onerror="this.style.opacity=.25">
    </div>
@@ -93,7 +93,7 @@ function renderProducts(){
 }
 
 function setupHero(){
- heroCandidates=products.filter(p=>p.destacado||p.oferta||p.promocion||p.nuevo);
+ heroCandidates=products.filter(p=>p.destacado||p.oferta||p.promocion||p.nuevo||p.proximoLanzamiento);
  if(!heroCandidates.length)heroCandidates=[...products];
  heroCandidates.sort(()=>Math.random()-.5);heroIndex=0;renderHero();
  clearInterval(heroTimer);if(heroCandidates.length>1)heroTimer=setInterval(nextHero,6000);
@@ -101,7 +101,7 @@ function setupHero(){
 function renderHero(){
  const p=heroCandidates[heroIndex];if(!p)return;
  $("#hero").classList.remove("hero-animate");void $("#hero").offsetWidth;$("#hero").classList.add("hero-animate");
- $("#heroTag").textContent=p.oferta?"OFERTA":p.promocion?"PROMOCIÓN":p.destacado?"★ DESTACADO":p.nuevo?"NUEVO":"RECOMENDADO";
+ $("#heroTag").textContent=p.oferta?"OFERTA":p.promocion?"PROMOCIÓN":p.destacado?"★ DESTACADO":p.proximoLanzamiento?"PRÓXIMO LANZAMIENTO":p.nuevo?"NUEVO":"RECOMENDADO";
  $("#heroName").textContent=p.nombre||"Producto";
  $("#heroText").textContent=p.textoPromocion||p.descripcion||p.categoriaNombre||"Descubre este producto.";
  $("#heroImg").src=img(p);
