@@ -1,4 +1,4 @@
-// AuraERP v1.4.0 - Security hardening
+// AuraERP v1.7.0 - Security hardening
 rules_version = '2';
 service cloud.firestore {
  match /databases/{database}/documents {
@@ -79,10 +79,9 @@ service cloud.firestore {
 
   match /abonos/{id}{
    allow read: if active();
-   allow create: if collector()
-     && request.resource.data.monto is number
-     && request.resource.data.monto > 0;
-   allow update,delete: if false;
+   allow create: if collector() && request.resource.data.monto is number && request.resource.data.monto > 0;
+   allow update: if admin();
+   allow delete: if false;
   }
 
   match /tareasCRM/{id}{
@@ -94,7 +93,8 @@ service cloud.firestore {
   match /movimientosInventario/{id}{
    allow read: if active();
    allow create: if seller() || admin() || supervisor();
-   allow update,delete: if false;
+   allow update: if admin();
+   allow delete: if false;
   }
 
   match /respaldos/{id}{
@@ -111,7 +111,8 @@ service cloud.firestore {
   match /bitacora/{id}{
    allow create: if active();
    allow read: if admin();
-   allow update,delete: if false;
+   allow update: if admin();
+   allow delete: if false;
   }
 
   match /{document=**}{ allow read,write: if false; }

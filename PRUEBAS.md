@@ -1,16 +1,16 @@
-# QA AuraERP v1.6.0
+# QA AuraERP v1.7.0
 
-- [ ] Asistente IA abre.
-- [ ] Datos se actualizan desde Firebase.
-- [ ] Probar las 20 preguntas rápidas.
-- [ ] Resumen ejecutivo.
-- [ ] Qué debería revisar hoy.
-- [ ] Producto más vendido.
-- [ ] Clientes que deben.
-- [ ] Reabastecimiento.
-- [ ] Ticket promedio.
-- [ ] Margen.
-- [ ] Comparación mes anterior.
-- [ ] Pregunta libre reconocida.
-- [ ] Botón global sincroniza Asistente.
-- [ ] Responsive móvil.
+- [ ] PUBLICAR reglas v1.7.0.
+- [ ] Generar respaldo.
+- [ ] Abrir JSON y verificar meta.app = AuraERP.
+- [ ] Historial registra respaldo.
+- [ ] Configurar diario/semanal/quincenal/mensual.
+- [ ] Próximo respaldo calculado.
+- [ ] Validar archivo AuraERP correcto.
+- [ ] Archivo JSON incorrecto debe rechazarse.
+- [ ] Restaurar exige escribir RESTAURAR.
+- [ ] Segunda confirmación.
+- [ ] Restaurar documento de prueba.
+- [ ] Bitácora registra restauración.
+- [ ] Usuario no admin no puede restaurar.
+- [ ] Recordatorio de respaldo vencido.

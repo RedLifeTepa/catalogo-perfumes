@@ -1,15 +1,12 @@
-# AuraERP v1.6.1 - Assistant UX
+# AuraERP v1.7.1 - Intelligence Fix
 
-- Rediseño completo del Centro de IA.
-- Las 20 preguntas aparecen siempre como botones.
-- Clasificación en 5 grupos:
-  - Ventas y rentabilidad
-  - Productos e inventario
-  - Clientes y cobranza
-  - Oportunidades y seguimiento
-  - Dirección
-- Icono individual para cada pregunta.
-- Chat rediseñado.
-- Estado de conexión y privacidad.
-- Campo manual queda como opción secundaria.
-- Layout responsive.
+- Regreso al Centro de Inteligencia/Asistente para corregir funcionamiento.
+- Eliminado el botón Actualizar del asistente: la información carga automáticamente.
+- 20 preguntas visibles y clasificadas.
+- Un clic muestra la respuesta directamente en el panel derecho.
+- Ya no es necesario escribir preguntas.
+- La pregunta seleccionada queda resaltada.
+- Panel de resultado más grande y práctico.
+- Indicador de sincronización real.
+- Contadores visibles de ventas, pedidos, productos, clientes, abonos y tareas CRM para confirmar que Firebase cargó.
+- Mantiene Respaldos v1.7.0.
