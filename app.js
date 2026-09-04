@@ -441,7 +441,18 @@ async function loadAIAssistant(){
   $("#aiLastSync").textContent=new Date().toLocaleString("es-MX");
  }catch(e){console.error("Asistente IA",e)}
 }
-function renderAIQuestions(){$("#aiQuickQuestions").innerHTML=aiQuestions.map((q,i)=>`<button class="ai-q" data-ai="${i}">${i+1}. ${q}</button>`).join("");$$(".ai-q").forEach(b=>b.onclick=()=>askAI(aiQuestions[Number(b.dataset.ai)]))}
+function renderAIQuestions(){
+ const groups=[
+  {title:"💰 Ventas y rentabilidad",items:[0,1,2,9,12,16]},
+  {title:"📦 Productos e inventario",items:[3,6,7,13]},
+  {title:"👥 Clientes y cobranza",items:[4,5,8,10]},
+  {title:"🎯 Oportunidades y seguimiento",items:[11,14,15,17,18]},
+  {title:"📊 Dirección",items:[19]}
+ ];
+ const icons=["💵","🏆","📈","👀","💳","⭐","📦","⛔","💰","🧾","🕒","🏷️","📊","🐢","⏰","🛍️","📈","🎯","🔎","📋"];
+ $("#aiQuickQuestions").innerHTML=groups.map(g=>`<div class="ai-category"><h4>${g.title}</h4><div class="ai-category-buttons">${g.items.map(i=>`<button type="button" class="ai-q" data-ai="${i}"><span class="ai-q-icon">${icons[i]}</span><span>${aiQuestions[i]}</span></button>`).join("")}</div></div>`).join("");
+ $$(".ai-q").forEach(b=>b.onclick=()=>askAI(aiQuestions[Number(b.dataset.ai)]));
+}
 function aiMonth(offset=0){let d=new Date(),m=d.getMonth()+offset,y=d.getFullYear();while(m<0){m+=12;y--}while(m>11){m-=12;y++}return {m,y}}
 function aiSalesMonth(offset=0){let x=aiMonth(offset);return aiData.sales.filter(v=>{let d=tsDate(v.createdAt);return d&&d.getMonth()===x.m&&d.getFullYear()===x.y})}
 function aiProductUnits(sales=aiData.sales){let map={};sales.forEach(v=>(v.productos||[]).forEach(i=>map[i.productoID]=(map[i.productoID]||0)+Number(i.cantidad||0)));return map}
