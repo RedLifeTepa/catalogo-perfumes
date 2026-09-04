@@ -1,22 +1,18 @@
-# AuraERP v1.5.0 — Inteligencia Comercial
+# AuraERP v1.5.1 - Functional Recovery
 
-- Nuevo Centro de Inteligencia Comercial.
-- Ventas por periodo.
-- Comparación contra periodo anterior.
-- Utilidad y margen estimados usando costo de producto.
-- Ticket promedio.
-- Conversión Pedido → Venta.
-- Ranking de productos vendidos.
-- Ranking de productos más vistos.
-- Mejores clientes.
-- Salud de inventario.
-- Tendencia gráfica de ventas.
-- Recomendaciones automáticas:
-  - stock bajo / agotados
-  - productos con vistas pero pocas ventas
-  - margen reducido
-  - baja conversión
-  - cobranza pendiente
-  - clientes inactivos
-- Periodos: 30, 90, 365 días o historial completo.
-- Integrado a sincronización global.
+Corrección integral de regresión detectada después de CRM v1.4.
+
+- Reparado error JavaScript que detenía toda la aplicación después de Productos.
+- Dashboard vuelve a consultar Firebase.
+- Inventario vuelve a cargar y sus botones quedan operativos.
+- CRM avanzado carga clientes y tareas.
+- Pedidos cargan automáticamente.
+- Ventas y Cobranza cargan automáticamente.
+- Reportes vuelven a generar información.
+- Documentos vuelve a cargar selectores.
+- Notificaciones e Inteligencia vuelven a ejecutarse.
+- Sincronización global al iniciar sesión.
+- Sincronización automática y botón global restaurados.
+- Un fallo en un módulo ya no bloquea el resto.
+- Buscadores y filtros ampliados en todos los módulos.
+- Tablas responsive con desplazamiento interno cuando sea necesario.

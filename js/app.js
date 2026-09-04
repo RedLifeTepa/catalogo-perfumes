@@ -4,7 +4,7 @@ async function log(action){try{await addDoc(collection(db,"bitacora"),{action,ui
 $("#loginForm").onsubmit=async e=>{e.preventDefault();try{await signInWithEmailAndPassword(auth,$("#email").value.trim(),$("#password").value)}catch(x){$("#loginMsg").textContent="No fue posible iniciar sesión."}};
 $("#resetBtn").onclick=async()=>{try{await sendPasswordResetEmail(auth,$("#email").value.trim());$("#loginMsg").textContent="Correo enviado."}catch(e){$("#loginMsg").textContent="Escribe un correo válido."}};
 $("#logoutBtn").onclick=()=>signOut(auth);
-onAuthStateChanged(auth,async u=>{if(!u){$("#login").style.display="grid";$("#app").style.display="none";return}const s=await getDoc(doc(db,"usuarios",u.uid));if(!s.exists()||s.data().activo!==true){$("#loginMsg").textContent="Usuario sin perfil activo.";await signOut(auth);return}$("#userLabel").textContent=s.data().nombre||u.email;$("#login").style.display="none";$("#app").style.display="flex";$("#firebaseStatus").textContent="Firebase conectado";await loadCategories();await loadProducts()});
+onAuthStateChanged(auth,async u=>{if(!u){$("#login").style.display="grid";$("#app").style.display="none";return}try{const s=await getDoc(doc(db,"usuarios",u.uid));if(!s.exists()||s.data().activo!==true){$("#loginMsg").textContent="Usuario sin perfil activo.";await signOut(auth);return}$("#userLabel").textContent=s.data().nombre||u.email;$("#login").style.display="none";$("#app").style.display="flex";$("#firebaseStatus").textContent="Firebase conectado";setTimeout(()=>refreshAllData(true),150)}catch(e){console.error("Inicio AuraERP",e);$("#loginMsg").textContent="No fue posible inicializar AuraERP."}});
 $("#nav").onclick=e=>{const b=e.target.closest("[data-module]");if(!b)return;$$(".nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");$$(".module").forEach(x=>x.classList.remove("active"));$("#"+b.dataset.module).classList.add("active");$("#sidebar").classList.remove("open")};
 $("#menuBtn").onclick=()=>$("#sidebar").classList.toggle("open");$("#themeBtn").onclick=()=>{document.body.classList.toggle("dark");localStorage.setItem("aura-theme",document.body.classList.contains("dark")?"dark":"light")};if(localStorage.getItem("aura-theme")==="dark")document.body.classList.add("dark");
 $("#saveConfig").onclick=async()=>{try{await setDoc(doc(db,"configuracion","empresa"),{nombre:$("#businessName").value.trim(),whatsapp:$("#whatsapp").value.trim(),logo:$("#businessLogo")?.value.trim()||"",moneda:$("#currency")?.value||"MXN",facebook:$("#cfgFacebook")?.value.trim()||"",instagram:$("#cfgInstagram")?.value.trim()||"",beneficios:[{icon:"🚚",title:"Envíos seguros",text:"A todo México"},{icon:"🛡️",title:"Productos originales",text:"Garantía de autenticidad"},{icon:"🎧",title:"Atención personalizada",text:"Estamos para ayudarte"},{icon:"🔒",title:"Compra segura",text:"Tus datos protegidos"},{icon:"🏅",title:"Mayoreo disponible",text:"Precios especiales"}],updatedAt:serverTimestamp()},{merge:true});$("#configMsg").style.color="var(--ok)";$("#configMsg").textContent="Configuración guardada.";await log("Actualizó configuración")}catch(e){$("#configMsg").textContent="No fue posible guardar."}};
@@ -71,7 +71,10 @@ async function openClient(id){
  $("#detailStage").value=c.etapaCRM||"cliente_potencial";$("#clientModal").classList.add("open");
  $("#saveClientCRM").onclick=async()=>{try{await updateDoc(doc(db,"clientes",c.id),{etapaCRM:$("#detailStage").value,notas:$("#clientNotes").value,updatedAt:serverTimestamp()});await log("Actualizó ficha CRM de cliente");$("#clientModal").classList.remove("open");await loadClients()}catch(e){alert("No se pudo actualizar la ficha.")}};
 }
-$("#refreshClients").onclick=loadClients;$("#clientSearch").oninput=renderClients;$("#clientStage").onchange=renderClients;$("#closeClient").onclick=()=>$("#clientModal").classList.remove("open");
+const legacyRefreshClients=$("#refreshClients");if(legacyRefreshClients)legacyRefreshClients.onclick=loadClients;
+const legacyClientSearch=$("#clientSearch");if(legacyClientSearch)legacyClientSearch.oninput=()=>{if(typeof renderCRMAdvanced==="function")renderCRMAdvanced();else renderClients()};
+const legacyClientStage=$("#clientStage");if(legacyClientStage)legacyClientStage.onchange=()=>{if(typeof renderCRMAdvanced==="function")renderCRMAdvanced();else renderClients()};
+const closeClientBtn=$("#closeClient");if(closeClientBtn)closeClientBtn.onclick=()=>$("#clientModal").classList.remove("open");
 
 let adminOrders=[],sales=[];
 const mx=n=>new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN"}).format(Number(n||0));
@@ -161,7 +164,7 @@ async function savePayment(){
 }
 function historyPayment(id){let v=collectionSales.find(x=>x.id===id),p=allPayments.filter(x=>x.ventaID===id);$("#paymentHistory").innerHTML=`<h3>${v.folio} · ${v.clienteNombre}</h3><ul class="history-list">${p.map(x=>`<li><strong>${mx(x.monto)}</strong> · ${x.metodo}<br><small>${x.observaciones||"Sin observaciones"}</small></li>`).join("")||"<li>Sin abonos.</li>"}</ul>`;$("#historyModal").classList.add("open")}
 function sendBalance(v,last=null){if(!v)return;let text=Number(v.saldo||0)===0?`Hola, ${v.clienteNombre}. Te confirmamos que tu cuenta ${v.folio} ha quedado completamente liquidada.\n\nMuchas gracias por tu confianza y por tu compra.`:`Hola, ${v.clienteNombre}.${last?` Muchas gracias por tu abono de ${mx(last)}.`:""}\n\nTu saldo actualizado de la cuenta ${v.folio} es ${mx(v.saldo)}.\n\n¡Muchas gracias por tu pago y por tu confianza!`;window.open(`https://wa.me/${String(v.telefono||"").replace(/\D/g,"")}?text=${encodeURIComponent(text)}`,"_blank")}
-$("#refreshCollections").onclick=loadCollections;$("#collectionSearch").oninput=renderCollections;$("#collectionStatus").onchange=renderCollections;$("#closePayment").onclick=()=>$("#paymentModal").classList.remove("open");$("#closeHistory").onclick=()=>$("#historyModal").classList.remove("open");
+const refreshCollectionsBtn=$("#refreshCollections");if(refreshCollectionsBtn)refreshCollectionsBtn.onclick=loadCollections;$("#collectionSearch").oninput=renderCollections;$("#collectionStatus").onchange=renderCollections;$("#closePayment").onclick=()=>$("#paymentModal").classList.remove("open");$("#closeHistory").onclick=()=>$("#historyModal").classList.remove("open");
 
 let reportRows=[],reportHeaders=[];
 function tsDate(v){if(!v)return null;if(v.toDate)return v.toDate();if(v.seconds)return new Date(v.seconds*1000);return new Date(v)}
@@ -191,7 +194,7 @@ function businessNameForReport(){return $("#businessName")?.value||"AuraERP"}
 function csvEscape(v){let s=String(v??"");return `"${s.replaceAll('"','""')}"`}
 function exportCSV(){if(!reportRows.length)return alert("Primero genera un reporte.");let csv="\ufeff"+reportHeaders.map(csvEscape).join(",")+"\n"+reportRows.map(r=>r.map(csvEscape).join(",")).join("\n"),blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=`AuraERP-${$("#reportType").value}-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(u)}
 async function loadAudit(){try{let s=await getDocs(collection(db,"bitacora")),rows=s.docs.map(d=>d.data()).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)),q=($("#logSearch").value||"").toLowerCase();rows=rows.filter(x=>!q||(x.action||"").toLowerCase().includes(q)||(x.email||"").toLowerCase().includes(q));$("#auditTable").innerHTML=rows.map(x=>`<tr><td>${tsDate(x.createdAt)?.toLocaleString("es-MX")||"—"}</td><td>${x.action||""}</td><td>${x.email||""}</td></tr>`).join("")||'<tr><td colspan="3">Sin movimientos.</td></tr>'}catch(e){$("#auditTable").innerHTML='<tr><td colspan="3">No fue posible consultar la bitácora.</td></tr>'}}
-$("#refreshDashboard").onclick=loadDashboardReal;$("#runReport").onclick=generateReport;$("#reportCSV").onclick=exportCSV;$("#reportPrint").onclick=()=>{if(!reportRows.length)return alert("Primero genera un reporte.");window.print()};$("#refreshLog").onclick=loadAudit;$("#logSearch").oninput=loadAudit;
+const refreshDashboardBtn=$("#refreshDashboard");if(refreshDashboardBtn)refreshDashboardBtn.onclick=loadDashboardReal;$("#runReport").onclick=generateReport;$("#reportCSV").onclick=exportCSV;$("#reportPrint").onclick=()=>{if(!reportRows.length)return alert("Primero genera un reporte.");window.print()};const refreshLogBtn=$("#refreshLog");if(refreshLogBtn)refreshLogBtn.onclick=loadAudit;$("#logSearch").oninput=loadAudit;
 setTimeout(loadDashboardReal,1200);
 
 let systemUsers=[],backupHistory=[];
@@ -200,16 +203,16 @@ async function loadUsers(){
 }
 function renderUsers(){let q=($("#userSearch").value||"").toLowerCase(),r=$("#userRoleFilter").value,arr=systemUsers.filter(u=>(!q||(u.nombre||"").toLowerCase().includes(q)||(u.correo||"").toLowerCase().includes(q))&&(!r||u.rol===r));$("#usersTable").innerHTML=arr.map(u=>`<tr><td>${u.nombre||"—"}</td><td>${u.correo||"—"}</td><td><span class="role-pill">${u.rol||"consulta"}</span></td><td>${u.activo!==false?"Activo":"Desactivado"}</td><td><button class="smallbtn editUser" data-id="${u.id}">Editar</button></td></tr>`).join("")||'<tr><td colspan="5">Sin usuarios.</td></tr>';$$(".editUser").forEach(b=>b.onclick=()=>openUser(b.dataset.id))}
 function openUser(id){let u=systemUsers.find(x=>x.id===id);if(!u)return;$("#userDetail").innerHTML=`<div class="field"><label>Nombre</label><input id="editUserName" value="${u.nombre||""}"></div><div class="field"><label>Rol</label><select id="editUserRole"><option value="admin">Administrador</option><option value="supervisor">Supervisor</option><option value="vendedor">Vendedor</option><option value="cobrador">Cobrador</option><option value="consulta">Consulta</option></select></div><div class="field"><label>Estado</label><select id="editUserActive"><option value="true">Activo</option><option value="false">Desactivado</option></select></div><button id="saveUser" class="btn btn-primary fit">Guardar usuario</button>`;$("#editUserRole").value=u.rol||"consulta";$("#editUserActive").value=String(u.activo!==false);$("#userModal").classList.add("open");$("#saveUser").onclick=async()=>{try{await updateDoc(doc(db,"usuarios",id),{nombre:$("#editUserName").value.trim(),rol:$("#editUserRole").value,activo:$("#editUserActive").value==="true",updatedAt:serverTimestamp()});await log(`Actualizó usuario ${u.correo||id}`);$("#userModal").classList.remove("open");await loadUsers()}catch(e){alert("No se pudo actualizar el usuario.")}}}
-$("#refreshUsers").onclick=loadUsers;$("#userSearch").oninput=renderUsers;$("#userRoleFilter").onchange=renderUsers;$("#closeUser").onclick=()=>$("#userModal").classList.remove("open");
+const refreshUsersBtn=$("#refreshUsers");if(refreshUsersBtn)refreshUsersBtn.onclick=loadUsers;$("#userSearch").oninput=renderUsers;$("#userRoleFilter").onchange=renderUsers;$("#closeUser").onclick=()=>$("#userModal").classList.remove("open");
 
 const backupCollections=["configuracion","usuarios","productos","categorias","clientes","pedidos","ventas","abonos","bitacora","movimientosInventario","tareasCRM"];
 function plain(v){if(v===null||v===undefined)return v;if(Array.isArray(v))return v.map(plain);if(typeof v==="object"){if(v.toDate)return v.toDate().toISOString();let o={};for(let k in v)o[k]=plain(v[k]);return o}return v}
 async function makeBackup(){
  let btn=$("#makeBackup"),msg=$("#backupMsg");btn.disabled=true;btn.textContent="Generando...";msg.textContent="";
- try{let payload={meta:{app:"AuraERP",version:"0.9.0",createdAt:new Date().toISOString(),createdBy:auth.currentUser.email},data:{}},count=0;
+ try{let payload={meta:{app:"AuraERP",version:"1.5.1",createdAt:new Date().toISOString(),createdBy:auth.currentUser.email},data:{}},count=0;
  for(let name of backupCollections){let s=await getDocs(collection(db,name));payload.data[name]=s.docs.map(d=>({id:d.id,...plain(d.data())}));count+=s.size}
  let blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=`AuraERP-respaldo-${new Date().toISOString().replaceAll(":","-").slice(0,19)}.json`;link.click();URL.revokeObjectURL(url);
- await addDoc(collection(db,"respaldos"),{createdAt:serverTimestamp(),usuario:auth.currentUser.email,uid:auth.currentUser.uid,registros:count,tipo:"manual",version:"0.9.0"});await log(`Generó respaldo de ${count} registros`);msg.style.color="var(--ok)";msg.textContent="Respaldo generado correctamente.";await loadBackups()
+ await addDoc(collection(db,"respaldos"),{createdAt:serverTimestamp(),usuario:auth.currentUser.email,uid:auth.currentUser.uid,registros:count,tipo:"manual",version:"1.5.1"});await log(`Generó respaldo de ${count} registros`);msg.style.color="var(--ok)";msg.textContent="Respaldo generado correctamente.";await loadBackups()
  }catch(e){console.error(e);msg.textContent="No fue posible generar el respaldo."}finally{btn.disabled=false;btn.textContent="Generar respaldo ahora"}
 }
 async function loadBackups(){try{let s=await getDocs(collection(db,"respaldos"));backupHistory=s.docs.map(d=>d.data()).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));$("#backupTable").innerHTML=backupHistory.map(x=>`<tr><td>${tsDate(x.createdAt)?.toLocaleString("es-MX")||"—"}</td><td>${x.usuario||""}</td><td>${x.registros||0}</td><td>${x.tipo||""}</td></tr>`).join("")||'<tr><td colspan="4">Sin respaldos.</td></tr>';let last=backupHistory[0];$("#lastBackup").textContent=last?tsDate(last.createdAt)?.toLocaleString("es-MX"):"Sin registro";calcNextBackup(last)}catch(e){}}
@@ -225,7 +228,7 @@ async function loadNotifications(){
  $("#notificationsList").innerHTML=notices.map(n=>`<div class="notice ${n.c}"><div class="notice-icon">${n.i}</div><div><strong>${n.t}</strong><small>${n.s}</small></div></div>`).join("")
  }catch(e){$("#notificationsList").innerHTML='<div class="notice danger">No fue posible generar notificaciones.</div>'}
 }
-$("#refreshNotifications").onclick=loadNotifications;
+const refreshNotificationsBtn=$("#refreshNotifications");if(refreshNotificationsBtn)refreshNotificationsBtn.onclick=loadNotifications;
 setTimeout(()=>{loadUsers();loadBackups();loadNotifications()},1500);
 
 // v1.0 RC1: recuperación defensiva de datos maestros.
@@ -240,25 +243,20 @@ const rp=document.querySelector("#reloadProducts");if(rp)rp.onclick=async()=>{aw
 
 async function refreshAllData(silent=false){
  const btn=$("#globalRefresh"),status=$("#syncStatus");
- if(btn)btn.classList.add("spinning");if(status){status.textContent="Sincronizando...";status.className="sync-status syncing"}
+ if(btn)btn.classList.add("spinning");
+ if(status){status.textContent="Sincronizando...";status.className="sync-status syncing"}
  const jobs=[
-  ["categorías",()=>loadCategories()],
-  ["productos",()=>loadProducts()],["inventario",()=>loadInventory()],["documentos",()=>loadDocumentCenter()],["inteligencia",()=>loadIntelligence()],
-  ["pedidos",()=>loadOrders()],
-  ["clientes",()=>loadCRMAdvanced()],
-  ["ventas",()=>loadSales()],
-  ["cobranza",()=>loadCollections()],
-  ["dashboard",()=>loadDashboardReal()],
-  ["usuarios",()=>loadUsers()],
-  ["respaldos",()=>loadBackups()],
-  ["notificaciones",()=>loadNotifications()],
-  ["bitácora",()=>loadAudit()]
+  ["categorías",loadCategories],["productos",loadProducts],["inventario",loadInventory],
+  ["pedidos",loadOrders],["clientes",loadCRMAdvanced],["ventas",loadSales],
+  ["cobranza",loadCollections],["dashboard",loadDashboardReal],["reportes",async()=>{}],
+  ["documentos",loadDocumentCenter],["inteligencia",loadIntelligence],["usuarios",loadUsers],
+  ["respaldos",loadBackups],["notificaciones",loadNotifications],["bitácora",loadAudit]
  ];
- let errors=[];
- for(const [name,fn] of jobs){try{await fn()}catch(e){console.error("Refresh "+name,e);errors.push(name)}}
+ const results=await Promise.allSettled(jobs.map(([,fn])=>fn()));
+ let errors=[];results.forEach((r,i)=>{if(r.status==="rejected"){errors.push(jobs[i][0]);console.error("Refresh "+jobs[i][0],r.reason)}});
  if(btn)btn.classList.remove("spinning");
  if(status){status.textContent=errors.length?`Error: ${errors.join(", ")}`:"Sincronizado";status.className="sync-status "+(errors.length?"error":"ok")}
- if(!silent&&!errors.length){setTimeout(()=>{if(status){status.textContent="Sincronizado";status.className="sync-status ok"}},1500)}
+ return errors;
 }
 const globalRefresh=$("#globalRefresh");if(globalRefresh)globalRefresh.onclick=()=>refreshAllData(false);
 // Actualización automática al recuperar foco/conectividad y cada 60 segundos.
