@@ -1,7 +1,6 @@
-# AuraERP v1.5.3
+# AuraERP v1.5.4 - Próximos lanzamientos Hotfix
 
-- Nuevo selector `Próximos lanzamientos` en Productos.
-- Se guarda en Firestore como `proximoLanzamiento`.
-- Badge público `PRÓXIMAMENTE`.
-- Filtro 🚀 Próximos lanzamientos en catálogo.
-- Los próximos lanzamientos pueden participar en el banner.
+- Checkbox visible junto a Nuevo.
+- Guarda `proximoLanzamiento` en Firestore.
+- Filtro y badge público.
+- Actualiza caché del Service Worker.
