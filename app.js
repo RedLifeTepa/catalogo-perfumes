@@ -436,8 +436,11 @@ const aiQuestions=[
 ];
 async function loadAIAssistant(){
  try{
-  let [vs,os,ps,cs,abs,ts,ims]=await Promise.all([getDocs(collection(db,"ventas")),getDocs(collection(db,"pedidos")),getDocs(collection(db,"productos")),getDocs(collection(db,"clientes")),getDocs(collection(db,"abonos")),getDocs(collection(db,"tareasCRM")),getDocs(collection(db,"movimientosInventario"))]);
-  aiData={sales:vs.docs.map(d=>({id:d.id,...d.data()})),orders:os.docs.map(d=>({id:d.id,...d.data()})),products:ps.docs.map(d=>({id:d.id,...d.data()})),clients:cs.docs.map(d=>({id:d.id,...d.data()})),payments:abs.docs.map(d=>({id:d.id,...d.data()})),tasks:ts.docs.map(d=>({id:d.id,...d.data()})),inventory:ims.docs.map(d=>({id:d.id,...d.data()}))};
+  const defs=[["sales","ventas"],["orders","pedidos"],["products","productos"],["clients","clientes"],["payments","abonos"],["tasks","tareasCRM"],["inventory","movimientosInventario"]];
+  const results=await Promise.allSettled(defs.map(([,col])=>getDocs(collection(db,col))));
+  let failed=[];
+  results.forEach((r,i)=>{let [key,col]=defs[i];if(r.status==="fulfilled")aiData[key]=r.value.docs.map(d=>({id:d.id,...d.data()}));else{aiData[key]=[];failed.push(col);console.error("IA collection "+col,r.reason)}});
+  if(failed.length && $("#aiLastSync"))$("#aiLastSync").textContent="Carga parcial: "+failed.join(", ");
   $("#aiLastSync").textContent="Datos actualizados · "+new Date().toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"});if($("#aiSyncDot"))$("#aiSyncDot").style.color="#22c55e";
   if($("#aiDataSales"))$("#aiDataSales").textContent=aiData.sales.length;if($("#aiDataOrders"))$("#aiDataOrders").textContent=aiData.orders.length;if($("#aiDataProducts"))$("#aiDataProducts").textContent=aiData.products.length;if($("#aiDataClients"))$("#aiDataClients").textContent=aiData.clients.length;if($("#aiDataPayments"))$("#aiDataPayments").textContent=aiData.payments.length;if($("#aiDataTasks"))$("#aiDataTasks").textContent=aiData.tasks.length;
  }catch(e){console.error("Asistente IA",e)}
@@ -487,11 +490,17 @@ function aiDailyBrief(){let orders=aiData.orders.filter(o=>o.estado==="nuevo").l
 function aiExecutiveSummary(){let sales=aiSalesMonth(),rev=aiRevenue(sales),profit=aiProfit(sales),debt=aiData.clients.reduce((s,c)=>s+Number(c.totalPendiente||0),0),units=aiProductUnits(sales),top=Object.entries(units).sort((a,b)=>b[1]-a[1])[0],p=top?aiData.products.find(x=>x.id===top[0]):null;return `<strong>Resumen ejecutivo del mes</strong><ul class="ai-answer-list"><li>Ventas: ${mx(rev)} en ${sales.length} operación(es).</li><li>Utilidad estimada: ${mx(profit)}.</li><li>Por cobrar: ${mx(debt)}.</li><li>Clientes registrados: ${aiData.clients.length}.</li><li>Pedidos nuevos: ${aiData.orders.filter(o=>o.estado==="nuevo").length}.</li><li>Producto líder: ${p?p.nombre+" ("+top[1]+" unidades)":"sin datos suficientes"}.</li></ul>`}
 function askAI(q){if(!q.trim())return;$("#aiMessages").insertAdjacentHTML("beforeend",`<div class="ai-message user"><p>${escDoc(q)}</p></div>`);let answer=aiAnswer(q);$("#aiMessages").insertAdjacentHTML("beforeend",`<div class="ai-message assistant"><strong>AuraERP</strong><p>${answer}</p></div>`);$("#aiMessages").scrollTop=$("#aiMessages").scrollHeight;$("#aiQuestion").value=""}
 function showAIResult(index,button){
+ if(!aiData.products.length&&!aiData.sales.length&&!aiData.clients.length&&!aiData.orders.length){
+  $("#aiResultSubtitle").textContent="Datos aún no disponibles";
+  $("#aiResult").className="ai-result-content";
+  $("#aiResult").innerHTML='<h2>Esperando información</h2><div class="answer-box">AuraERP todavía no ha recibido datos de Firebase. Espera unos segundos. Si persiste, el indicador superior mostrará qué colección falló.</div>';
+  return;
+ }
  $$(".ai-q").forEach(x=>x.classList.remove("selected"));if(button)button.classList.add("selected");
  let q=aiQuestions[index],answer=aiAnswer(q);$("#aiResultSubtitle").textContent=q;
  $("#aiResult").className="ai-result-content";$("#aiResult").innerHTML=`<h2>${escDoc(q)}</h2><div class="answer-box">${answer}</div>`;
 }
-renderAIQuestions();setTimeout(loadAIAssistant,1200);
+
 
 const BACKUP_COLLECTIONS=["configuracion","usuarios","productos","categorias","clientes","pedidos","ventas","abonos","bitacora","movimientosInventario","tareasCRM","respaldos"];
 let validatedRestore=null;
@@ -541,3 +550,25 @@ async function restoreValidatedBackup(){
 function checkBackupReminder(){if((localStorage.getItem("aura-backup-reminder")||"true")!=="true")return;let last=backupHistory?.[0],next=backupDueDate(last);if(next&&next<new Date())setTimeout(()=>{if(confirm("AuraERP recomienda generar un respaldo. La fecha programada ya venció. ¿Abrir Respaldos?")){let b=document.querySelector('[data-module="respaldos"]');if(b)b.click()}},800)}
 $("#makeBackup").onclick=makeBackupAdvanced;$("#saveBackupConfig").onclick=()=>{localStorage.setItem("aura-backup-frequency",$("#backupFrequency").value);localStorage.setItem("aura-backup-reminder",$("#backupReminder").value);$("#backupMsg").style.color="var(--ok)";$("#backupMsg").textContent="Programación guardada.";loadBackupsAdvanced()};$("#validateBackup").onclick=validateSelectedBackup;$("#restoreBackup").onclick=restoreValidatedBackup;$("#restoreFile").onchange=()=>{$("#restoreValidation").className="restore-validation";$("#restoreValidation").textContent="Archivo seleccionado. Pulsa Validar archivo.";validatedRestore=null;$("#restoreBackup").disabled=true};
 setTimeout(async()=>{await loadBackupsAdvanced();checkBackupReminder()},2500);
+
+// v1.7.2 - single, defensive boot for Intelligence Center.
+async function bootIntelligenceCenter(){
+ const list=$("#aiQuickQuestions"),result=$("#aiResult");
+ if(!list||!result)return;
+ try{
+  renderAIQuestions();
+  if($("#aiLastSync"))$("#aiLastSync").textContent="Consultando Firebase...";
+  if($("#aiSyncDot"))$("#aiSyncDot").style.color="#f59e0b";
+  await loadAIAssistant();
+  if($("#aiLastSync") && aiData.products.length===0 && aiData.sales.length===0 && aiData.clients.length===0){
+   $("#aiLastSync").textContent="Conectado · sin datos visibles";
+  }
+ }catch(e){
+  console.error("Intelligence boot",e);
+  if($("#aiLastSync"))$("#aiLastSync").textContent="Error al cargar datos";
+  if($("#aiSyncDot"))$("#aiSyncDot").style.color="#ef4444";
+  result.className="ai-result-content";
+  result.innerHTML=`<h2>No fue posible iniciar Inteligencia</h2><div class="answer-box">Detalle: ${escDoc(e?.code||e?.message||"Error desconocido")}</div>`;
+ }
+}
+setTimeout(bootIntelligenceCenter,500);

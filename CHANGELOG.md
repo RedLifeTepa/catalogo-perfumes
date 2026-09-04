@@ -1,12 +1,11 @@
-# AuraERP v1.7.1 - Intelligence Fix
+# AuraERP v1.7.2 - Intelligence Runtime Fix
 
-- Regreso al Centro de Inteligencia/Asistente para corregir funcionamiento.
-- Eliminado el botón Actualizar del asistente: la información carga automáticamente.
-- 20 preguntas visibles y clasificadas.
-- Un clic muestra la respuesta directamente en el panel derecho.
-- Ya no es necesario escribir preguntas.
-- La pregunta seleccionada queda resaltada.
-- Panel de resultado más grande y práctico.
-- Indicador de sincronización real.
-- Contadores visibles de ventas, pedidos, productos, clientes, abonos y tareas CRM para confirmar que Firebase cargó.
-- Mantiene Respaldos v1.7.0.
+- Corregido el error de inicialización real del Centro de Inteligencia.
+- Eliminadas referencias a controles de v1.6 que ya no existen.
+- Las 20 preguntas se dibujan al abrir el módulo.
+- Firebase se consulta automáticamente.
+- Carga independiente por colección.
+- Un error en una colección no bloquea las demás.
+- Contadores confirman los datos recibidos.
+- Diagnóstico visible si existe carga parcial.
+- Conserva Respaldos Avanzados v1.7.0.
