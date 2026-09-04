@@ -1,6 +1,5 @@
-# AuraERP v1.7.4
+# AuraERP v1.7.5
 
-- Eliminado filtro duplicado Próximos lanzamientos.
-- Asistente reducido a 20 botones y una respuesta debajo.
-- Preguntas se dibujan antes de consultar Firebase.
-- Módulo independiente intelligence-simple.js.
+- Única corrección: eliminar el segundo filtro visual de Próximos lanzamientos.
+- Se conserva el filtro de sistema 🚀 Próximos lanzamientos.
+- Una categoría de Firestore con el mismo nombre ya no se dibuja como filtro adicional.
