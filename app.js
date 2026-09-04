@@ -571,4 +571,4 @@ async function bootIntelligenceCenter(){
   result.innerHTML=`<h2>No fue posible iniciar Inteligencia</h2><div class="answer-box">Detalle: ${escDoc(e?.code||e?.message||"Error desconocido")}</div>`;
  }
 }
-setTimeout(bootIntelligenceCenter,500);
+// Intelligence v1.7.3 boots independently from js/intelligence.js

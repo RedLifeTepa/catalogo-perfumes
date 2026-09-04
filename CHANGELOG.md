@@ -1,11 +1,11 @@
-# AuraERP v1.7.2 - Intelligence Runtime Fix
+# AuraERP v1.7.3 - Intelligence Isolated Runtime
 
-- Corregido el error de inicialización real del Centro de Inteligencia.
-- Eliminadas referencias a controles de v1.6 que ya no existen.
-- Las 20 preguntas se dibujan al abrir el módulo.
-- Firebase se consulta automáticamente.
-- Carga independiente por colección.
-- Un error en una colección no bloquea las demás.
-- Contadores confirman los datos recibidos.
-- Diagnóstico visible si existe carga parcial.
-- Conserva Respaldos Avanzados v1.7.0.
+- El Centro de Inteligencia ahora usa `js/intelligence.js` independiente.
+- Ya no depende de que `app.js` llegue al final de su ejecución.
+- Las 20 preguntas se dibujan inmediatamente al cargar el DOM.
+- Cada clic calcula y muestra la respuesta directamente.
+- Firebase se consulta desde el módulo independiente.
+- Contadores muestran registros recibidos.
+- Carga parcial identifica colecciones con problemas.
+- Se validó sintaxis de app.js e intelligence.js con Node.
+- Conserva todas las funciones de AuraERP v1.7.x.
