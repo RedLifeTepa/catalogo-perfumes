@@ -1,0 +1,6 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import { getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+import { getFirestore,doc,getDoc,setDoc,addDoc,collection,serverTimestamp,getDocs,updateDoc,query,where,limit,runTransaction } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyBRfAGdlePV5rbyf5R1V9XLv7XoKK6m4yQ",authDomain:"estetica-animal-84240.firebaseapp.com",projectId:"estetica-animal-84240",storageBucket:"estetica-animal-84240.firebasestorage.app",messagingSenderId:"275634490331",appId:"1:275634490331:web:31eb3378efb5c64a29f5fe"};
+export const app=initializeApp(firebaseConfig);export const auth=getAuth(app);export const db=getFirestore(app);
+export {onAuthStateChanged,signInWithEmailAndPassword,signOut,sendPasswordResetEmail,doc,getDoc,setDoc,addDoc,collection,serverTimestamp,getDocs,updateDoc,query,where,limit,runTransaction};

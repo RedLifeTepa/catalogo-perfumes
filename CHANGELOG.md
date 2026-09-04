@@ -1,6 +1,21 @@
-# AuraERP v1.5.4 - Próximos lanzamientos Hotfix
+# AuraERP v1.6.0 - Centro de IA
 
-- Checkbox visible junto a Nuevo.
-- Guarda `proximoLanzamiento` en Firestore.
-- Filtro y badge público.
-- Actualiza caché del Service Worker.
+- Nuevo Asistente AuraERP.
+- 20 preguntas comerciales predeterminadas.
+- Preguntas libres con interpretación local por intención.
+- Análisis de ventas, productos, clientes, pedidos, cobranza, inventario y CRM.
+- Resumen ejecutivo.
+- Prioridades del día.
+- Producto más vendido.
+- Utilidad/margen.
+- Vistas vs ventas.
+- Clientes deudores y mejores clientes.
+- Stock bajo/agotados.
+- Ticket promedio.
+- Comparación mensual.
+- Clientes inactivos.
+- Promociones sugeridas.
+- Tareas CRM vencidas.
+- Pedidos pendientes.
+- Actualización manual y global.
+- No envía datos a servicios externos en esta versión.
