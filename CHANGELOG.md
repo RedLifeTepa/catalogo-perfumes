@@ -1,10 +1,10 @@
-# AuraERP v1.7.9
+# AuraERP v1.7.10 - Sidebar Scroll Fix
 
-- Configuración permite activar/desactivar filtros públicos:
-  Ofertas, Promociones, Destacados, Nuevos, Próximos lanzamientos y Categorías.
-- `Todos` permanece siempre visible.
-- Preferencias guardadas en `configuracion/empresa.filtrosCatalogo`.
-- Catálogo público respeta automáticamente la configuración.
-- Barra lateral administrativa tiene scroll vertical propio.
-- Ya no es necesario reducir el zoom para acceder a todos los módulos.
-- Scrollbar discreta y responsive.
+- Corrección específica del menú lateral.
+- El sidebar ahora es un contenedor flex de altura exacta al viewport.
+- El logotipo permanece fijo arriba.
+- `#nav` ocupa únicamente el espacio restante y tiene scroll vertical propio.
+- Scrollbar visible de 10 px.
+- Espacio inferior adicional para evitar que la barra de tareas del sistema tape Configuración.
+- Soporte `100dvh` en pantallas pequeñas.
+- No se modifica ninguna lógica de Firebase, ventas, IA, catálogo o configuración.

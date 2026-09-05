@@ -93,3 +93,39 @@ button:disabled{opacity:.55;cursor:not-allowed}
 
 /* v1.7.9 Sidebar scroll + catalog filter settings */
 .sidebar,.nav{scrollbar-width:thin;scrollbar-color:#58708a transparent}.sidebar{height:100vh!important;max-height:100vh!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain}.nav{padding-bottom:28px!important}.sidebar::-webkit-scrollbar{width:8px}.sidebar::-webkit-scrollbar-track{background:transparent}.sidebar::-webkit-scrollbar-thumb{background:#58708a;border-radius:10px}.sidebar::-webkit-scrollbar-thumb:hover{background:#7890aa}.config-subcard{margin:22px 0;padding:18px;border:1px solid var(--border);border-radius:14px;background:var(--bg)}.config-subcard h3{margin:0 0 5px}.filter-toggle-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.filter-toggle-grid label{display:flex;align-items:center;gap:9px;padding:11px 12px;border:1px solid var(--border);border-radius:11px;background:var(--card);cursor:pointer}.filter-toggle-grid input{width:17px;height:17px}@media(max-width:850px){.filter-toggle-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.filter-toggle-grid{grid-template-columns:1fr}}
+
+/* v1.7.10 - definitive sidebar viewport scroll */
+html,body{height:100%}
+#app{height:100vh!important;min-height:0!important;overflow:hidden!important}
+.sidebar{
+ position:sticky!important;
+ top:0!important;
+ height:100vh!important;
+ min-height:0!important;
+ max-height:100vh!important;
+ overflow:hidden!important;
+ display:flex!important;
+ flex-direction:column!important;
+}
+.sidebar .brand,.sidebar>a:first-child{flex:0 0 auto!important}
+#nav{
+ flex:1 1 auto!important;
+ min-height:0!important;
+ height:auto!important;
+ overflow-y:auto!important;
+ overflow-x:hidden!important;
+ padding-bottom:90px!important;
+ overscroll-behavior:contain!important;
+ scrollbar-gutter:stable!important;
+ scrollbar-width:auto!important;
+ scrollbar-color:#7890aa #17324f!important;
+}
+#nav::-webkit-scrollbar{width:10px!important}
+#nav::-webkit-scrollbar-track{background:#17324f!important;border-radius:10px!important}
+#nav::-webkit-scrollbar-thumb{background:#7890aa!important;border-radius:10px!important;border:2px solid #17324f!important}
+#nav::-webkit-scrollbar-thumb:hover{background:#9db0c4!important}
+.main,.content,.app-main{min-height:0!important;overflow-y:auto!important}
+@media(max-width:800px){
+ .sidebar{height:100dvh!important;max-height:100dvh!important}
+ #nav{padding-bottom:110px!important}
+}
