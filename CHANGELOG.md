@@ -1,8 +1,10 @@
-# AuraERP v1.7.8
+# AuraERP v1.7.9
 
-- Rediseño visual de los 20 botones del Asistente.
-- Tarjetas con icono, hover, selección y responsive 4/3/2/1 columnas.
-- Corrección reforzada del duplicado Próximos lanzamientos.
-- Se filtra la categoría equivalente y además se aplica una garantía final sobre el DOM.
-- Cache bust v1.7.8 en app.js, app.css, catalogo.js y catalogo.css.
-- No se modifican reglas Firebase ni lógica comercial.
+- Configuración permite activar/desactivar filtros públicos:
+  Ofertas, Promociones, Destacados, Nuevos, Próximos lanzamientos y Categorías.
+- `Todos` permanece siempre visible.
+- Preferencias guardadas en `configuracion/empresa.filtrosCatalogo`.
+- Catálogo público respeta automáticamente la configuración.
+- Barra lateral administrativa tiene scroll vertical propio.
+- Ya no es necesario reducir el zoom para acceder a todos los módulos.
+- Scrollbar discreta y responsive.
