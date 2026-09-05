@@ -620,3 +620,21 @@ async function bootIntelligenceCenter(){
  }
 }
 // Intelligence v1.7.3 boots independently from js/intelligence.js
+
+let faqRows=[];
+function renderFaqEditor(){
+ const box=$("#faqEditor");if(!box)return;
+ box.innerHTML=faqRows.map((x,i)=>`<div class="faq-edit-row"><div class="field"><label>Pregunta</label><input class="faq-q" data-i="${i}" value="${escDoc(x.pregunta||"")}"></div><div class="field"><label>Respuesta</label><textarea class="faq-a" data-i="${i}">${escDoc(x.respuesta||"")}</textarea></div><button type="button" class="smallbtn faq-remove" data-i="${i}">Eliminar</button></div>`).join("")||'<p class="muted">Todavía no has agregado preguntas.</p>';
+ $$(".faq-remove").forEach(b=>b.onclick=()=>{faqRows.splice(Number(b.dataset.i),1);renderFaqEditor()});
+}
+async function loadFaqConfig(){
+ try{let s=await getDoc(doc(db,"configuracion","empresa"));faqRows=s.exists()?(s.data().preguntasFrecuentes||[]):[];renderFaqEditor()}catch(e){console.warn("FAQ",e)}
+}
+async function saveFaqConfig(){
+ $$(".faq-q").forEach(x=>{let i=Number(x.dataset.i);faqRows[i].pregunta=x.value.trim()});$$(".faq-a").forEach(x=>{let i=Number(x.dataset.i);faqRows[i].respuesta=x.value.trim()});
+ faqRows=faqRows.filter(x=>x.pregunta&&x.respuesta);
+ await setDoc(doc(db,"configuracion","empresa"),{preguntasFrecuentes:faqRows,updatedAt:serverTimestamp()},{merge:true});
+}
+const addFaqBtn=$("#addFaqRow");if(addFaqBtn)addFaqBtn.onclick=()=>{faqRows.push({pregunta:"",respuesta:""});renderFaqEditor()};
+const originalSaveConfig=$("#saveConfig")?.onclick;if($("#saveConfig"))$("#saveConfig").addEventListener("click",()=>setTimeout(saveFaqConfig,50));
+setTimeout(loadFaqConfig,1300);

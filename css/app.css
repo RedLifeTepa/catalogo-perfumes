@@ -137,3 +137,5 @@ html,body{height:100%}
 .topbar{width:100%!important;margin:0!important}
 .content{width:100%!important;max-width:none!important;margin:0!important;padding-left:28px!important;padding-right:28px!important}
 @media(max-width:900px){#app{grid-template-columns:200px minmax(0,1fr)!important}.content{padding-left:20px!important;padding-right:20px!important}}
+
+.faq-editor{display:grid;gap:12px}.faq-edit-row{border:1px solid var(--border);border-radius:12px;padding:13px;background:var(--card)}.faq-edit-row textarea{min-height:80px;width:100%}
