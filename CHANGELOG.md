@@ -1,11 +1,8 @@
-# AuraERP v1.7.7 - Auditoría y corrección de caché/runtime
+# AuraERP v1.7.8
 
-- Auditoría real del código antes de modificar.
-- Corregida causa del filtro duplicado: JS histórico retenido por Service Worker.
-- index.html carga `catalogo.js?v=1.7.7`.
-- Service Worker usa network-first para HTML/CSS/JS.
-- Las 20 preguntas del asistente están escritas directamente en el HTML.
-- El asistente ya no depende de intelligence.js/intelligence-simple.js.
-- El manejador de preguntas está al inicio de app.js.
-- Firebase se consulta al primer clic.
-- Respuesta aparece debajo de los botones.
+- Rediseño visual de los 20 botones del Asistente.
+- Tarjetas con icono, hover, selección y responsive 4/3/2/1 columnas.
+- Corrección reforzada del duplicado Próximos lanzamientos.
+- Se filtra la categoría equivalente y además se aplica una garantía final sobre el DOM.
+- Cache bust v1.7.8 en app.js, app.css, catalogo.js y catalogo.css.
+- No se modifican reglas Firebase ni lógica comercial.
