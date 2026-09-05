@@ -1,4 +1,51 @@
 import {auth,db,onAuthStateChanged,signInWithEmailAndPassword,signOut,sendPasswordResetEmail,doc,getDoc,setDoc,addDoc,collection,serverTimestamp,getDocs,updateDoc,query,where,limit,runTransaction} from "./firebase-config.js";
+
+// v1.7.7 SIMPLE ASSISTANT - bound before the rest of AuraERP initializes.
+const SIMPLE_AI_QUESTIONS=["¿Cuánto vendí este mes?","¿Cuál es mi producto más vendido?","¿Cuál tiene mayor utilidad?","¿Qué producto tiene muchas vistas pero pocas ventas?","¿Qué clientes me deben?","¿Quiénes son mis mejores clientes?","¿Qué productos debo reabastecer?","¿Qué productos están agotados?","¿Cuánto dinero tengo por cobrar?","¿Cuál es mi ticket promedio?","¿Qué clientes llevan mucho tiempo sin comprar?","¿Qué promociones me convendría realizar?","¿Cómo se compara este mes contra el anterior?","¿Cuáles son mis productos con menor movimiento?","¿Qué tareas CRM están vencidas?","¿Qué pedidos siguen sin convertirse en venta?","¿Cuánto margen estoy obteniendo?","¿Qué debería revisar hoy?","¿Dónde estoy perdiendo oportunidades?","Dame un resumen ejecutivo de mi negocio."];
+let simpleAI={loaded:false,sales:[],orders:[],products:[],clients:[],payments:[],tasks:[]};
+const saiDate=v=>v?.toDate?v.toDate():v?.seconds?new Date(v.seconds*1000):v?new Date(v):null;
+const saiMoney=n=>new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN"}).format(Number(n||0));
+async function simpleAILoad(){
+ const status=document.querySelector("#aiSimpleStatus");if(status)status.textContent="Consultando Firebase...";
+ const defs=[["sales","ventas"],["orders","pedidos"],["products","productos"],["clients","clientes"],["payments","abonos"],["tasks","tareasCRM"]];
+ const rs=await Promise.allSettled(defs.map(x=>getDocs(collection(db,x[1]))));let bad=[];
+ rs.forEach((r,i)=>{let [k,c]=defs[i];if(r.status==="fulfilled")simpleAI[k]=r.value.docs.map(d=>({id:d.id,...d.data()}));else bad.push(c)});
+ simpleAI.loaded=true;if(status){status.textContent=bad.length?"Carga parcial: "+bad.join(", "):`Datos listos: ${simpleAI.products.length} productos · ${simpleAI.clients.length} clientes · ${simpleAI.sales.length} ventas · ${simpleAI.orders.length} pedidos`;status.className="ai-simple-status "+(bad.length?"warn":"ok")}
+}
+function saiMonth(offset=0){let n=new Date(),m=n.getMonth()+offset,y=n.getFullYear();while(m<0){m+=12;y--}while(m>11){m-=12;y++}return simpleAI.sales.filter(v=>{let d=saiDate(v.createdAt);return d&&d.getMonth()===m&&d.getFullYear()===y})}
+const saiRev=s=>s.reduce((a,v)=>a+Number(v.total||0),0);
+function saiUnits(s=simpleAI.sales){let m={};s.forEach(v=>(v.productos||[]).forEach(i=>m[i.productoID]=(m[i.productoID]||0)+Number(i.cantidad||0)));return m}
+function saiProfit(s){let z=0;s.forEach(v=>(v.productos||[]).forEach(i=>{let p=simpleAI.products.find(x=>x.id===i.productoID);z+=(Number(i.precioUnitario||0)-Number(p?.costo||0))*Number(i.cantidad||0)}));return z}
+const saiList=x=>`<ul>${x.map(v=>`<li>${v}</li>`).join("")}</ul>`;
+function simpleAIAnswer(i){
+ let cur=saiMonth(),prev=saiMonth(-1),rev=saiRev(cur),u=saiUnits(),rank=Object.entries(u).sort((a,b)=>b[1]-a[1]),pft=saiProfit(cur);
+ if(i===0)return `Este mes llevas <strong>${saiMoney(rev)}</strong> en ${cur.length} venta(s).`;
+ if(i===1){let x=rank[0],p=x&&simpleAI.products.find(z=>z.id===x[0]);return p?`<strong>${p.nombre}</strong> es el más vendido con ${x[1]} unidad(es).`:"Aún no hay ventas suficientes."}
+ if(i===2){let x=[...simpleAI.products].map(p=>({p,m:Number(p.precioMenudeo||0)-Number(p.costo||0)})).sort((a,b)=>b.m-a.m)[0];return x?`<strong>${x.p.nombre}</strong> tiene el mayor margen unitario estimado: ${saiMoney(x.m)}.`:"Faltan costos o precios."}
+ if(i===3){let sold=new Set(rank.slice(0,5).map(x=>x[0])),x=[...simpleAI.products].filter(p=>!sold.has(p.id)).sort((a,b)=>Number(b.numeroVistas||0)-Number(a.numeroVistas||0))[0];return x?`Revisa <strong>${x.nombre}</strong>: ${x.numeroVistas||0} vistas y no está entre los más vendidos.`:"No detecto un caso claro."}
+ if(i===4){let x=simpleAI.clients.filter(c=>Number(c.totalPendiente||0)>0);return x.length?`${x.length} cliente(s) tienen saldo.${saiList(x.slice(0,8).map(c=>`${c.nombre||c.telefono}: ${saiMoney(c.totalPendiente)}`))}`:"No hay saldos pendientes."}
+ if(i===5)return saiList([...simpleAI.clients].sort((a,b)=>Number(b.totalComprado||0)-Number(a.totalComprado||0)).slice(0,5).map((c,j)=>`${j+1}. ${c.nombre||c.telefono}: ${saiMoney(c.totalComprado)}`));
+ if(i===6){let x=simpleAI.products.filter(p=>p.activo!==false&&Number(p.stock||0)<=Number(p.stockMinimo||0));return x.length?saiList(x.map(p=>`${p.nombre}: stock ${p.stock||0}, mínimo ${p.stockMinimo||0}`)):"No hay productos bajo mínimo."}
+ if(i===7){let x=simpleAI.products.filter(p=>p.activo!==false&&Number(p.stock||0)<=0);return x.length?saiList(x.map(p=>p.nombre)):"No hay productos agotados."}
+ if(i===8)return `Tienes <strong>${saiMoney(simpleAI.clients.reduce((s,c)=>s+Number(c.totalPendiente||0),0))}</strong> por cobrar.`;
+ if(i===9)return cur.length?`Ticket promedio: <strong>${saiMoney(rev/cur.length)}</strong>.`:"No hay ventas este mes.";
+ if(i===10){let x=simpleAI.clients.filter(c=>{let d=saiDate(c.ultimaCompra||c.ultimaInteraccion||c.createdAt);return !d||(Date.now()-d.getTime())/86400000>60});return x.length?`${x.length} cliente(s) llevan más de 60 días sin actividad.${saiList(x.slice(0,8).map(c=>c.nombre||c.telefono))}`:"No detecto clientes inactivos."}
+ if(i===11){let x=[...simpleAI.products].filter(p=>p.activo!==false).sort((a,b)=>(u[a.id]||0)-(u[b.id]||0)).slice(0,3);return `Consideraría promociones para <strong>${x.map(p=>p.nombre).join(", ")||"productos de baja rotación"}</strong>.`;}
+ if(i===12){let pr=saiRev(prev),pct=pr?((rev-pr)/pr*100):(rev?100:0);return `Mes actual: <strong>${saiMoney(rev)}</strong>. Anterior: <strong>${saiMoney(pr)}</strong>. Variación: <strong>${pct>=0?"+":""}${pct.toFixed(1)}%</strong>.`}
+ if(i===13){let x=[...simpleAI.products].filter(p=>p.activo!==false).sort((a,b)=>(u[a.id]||0)-(u[b.id]||0)).slice(0,5);return saiList(x.map(p=>`${p.nombre}: ${u[p.id]||0} unidad(es)`));}
+ if(i===14){let x=simpleAI.tasks.filter(t=>t.estado!=="completada"&&saiDate(t.fechaProgramada)&&saiDate(t.fechaProgramada)<new Date());return `${x.length} tarea(s) CRM vencida(s).`;}
+ if(i===15)return `Hay <strong>${simpleAI.orders.filter(o=>o.estado==="nuevo").length}</strong> pedido(s) nuevos pendientes.`;
+ if(i===16)return rev?`Utilidad estimada: <strong>${saiMoney(pft)}</strong>. Margen: <strong>${(pft/rev*100).toFixed(1)}%</strong>.`:"No hay ventas para calcular margen.";
+ if(i===17||i===18){let o=simpleAI.orders.filter(x=>x.estado==="nuevo").length,debt=simpleAI.clients.reduce((s,c)=>s+Number(c.totalPendiente||0),0),low=simpleAI.products.filter(p=>p.activo!==false&&Number(p.stock||0)<=Number(p.stockMinimo||0)).length;return saiList([`${o} pedido(s) por atender`,`${saiMoney(debt)} por cobrar`,`${low} producto(s) con stock bajo/agotado`]);}
+ let top=rank[0],tp=top&&simpleAI.products.find(x=>x.id===top[0]);return saiList([`Ventas del mes: ${saiMoney(rev)}`,`Utilidad estimada: ${saiMoney(pft)}`,`Por cobrar: ${saiMoney(simpleAI.clients.reduce((s,c)=>s+Number(c.totalPendiente||0),0))}`,`Clientes: ${simpleAI.clients.length}`,`Pedidos nuevos: ${simpleAI.orders.filter(o=>o.estado==="nuevo").length}`,`Producto líder: ${tp?tp.nombre:"sin datos"}`]);
+}
+document.addEventListener("click",async e=>{
+ const b=e.target.closest("[data-simple-ai]");if(!b)return;
+ document.querySelectorAll("[data-simple-ai]").forEach(x=>x.classList.remove("active"));b.classList.add("active");
+ const i=Number(b.dataset.simpleAi),title=document.querySelector("#aiSimpleTitle"),ans=document.querySelector("#aiSimpleAnswer");
+ if(title)title.textContent=SIMPLE_AI_QUESTIONS[i];if(ans)ans.textContent="Consultando...";
+ try{if(!simpleAI.loaded)await simpleAILoad();if(ans)ans.innerHTML=simpleAIAnswer(i)}catch(err){console.error("Simple AI",err);if(ans)ans.textContent="No fue posible consultar Firebase: "+(err.code||err.message)}
+});
 const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);let cats=[],products=[],entity=null,editing=null;
 async function log(action){try{await addDoc(collection(db,"bitacora"),{action,uid:auth.currentUser?.uid,email:auth.currentUser?.email,createdAt:serverTimestamp()})}catch(e){console.warn(e)}}
 $("#loginForm").onsubmit=async e=>{e.preventDefault();try{await signInWithEmailAndPassword(auth,$("#email").value.trim(),$("#password").value)}catch(x){$("#loginMsg").textContent="No fue posible iniciar sesión."}};
@@ -7,7 +54,7 @@ $("#logoutBtn").onclick=()=>signOut(auth);
 onAuthStateChanged(auth,async u=>{if(!u){$("#login").style.display="grid";$("#app").style.display="none";return}try{const s=await getDoc(doc(db,"usuarios",u.uid));if(!s.exists()||s.data().activo!==true){$("#loginMsg").textContent="Usuario sin perfil activo.";await signOut(auth);return}$("#userLabel").textContent=s.data().nombre||u.email;$("#login").style.display="none";$("#app").style.display="flex";$("#firebaseStatus").textContent="Firebase conectado";setTimeout(()=>refreshAllData(true),150)}catch(e){console.error("Inicio AuraERP",e);$("#loginMsg").textContent="No fue posible inicializar AuraERP."}});
 $("#nav").onclick=e=>{const b=e.target.closest("[data-module]");if(!b)return;$$(".nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");$$(".module").forEach(x=>x.classList.remove("active"));$("#"+b.dataset.module).classList.add("active");$("#sidebar").classList.remove("open")};
 $("#menuBtn").onclick=()=>$("#sidebar").classList.toggle("open");$("#themeBtn").onclick=()=>{document.body.classList.toggle("dark");localStorage.setItem("aura-theme",document.body.classList.contains("dark")?"dark":"light")};if(localStorage.getItem("aura-theme")==="dark")document.body.classList.add("dark");
-$("#saveConfig").onclick=async()=>{try{await setDoc(doc(db,"configuracion","empresa"),{nombre:$("#businessName").value.trim(),whatsapp:$("#whatsapp").value.trim(),logo:$("#businessLogo")?.value.trim()||"",moneda:$("#currency")?.value||"MXN",facebook:$("#cfgFacebook")?.value.trim()||"",instagram:$("#cfgInstagram")?.value.trim()||"",beneficios:[{icon:"🚚",title:"Envíos seguros",text:"A todo México"},{icon:"🛡️",title:"Productos originales",text:"Garantía de autenticidad"},{icon:"🎧",title:"Atención personalizada",text:"Estamos para ayudarte"},{icon:"🔒",title:"Compra segura",text:"Tus datos protegidos"},{icon:"🏅",title:"Mayoreo disponible",text:"Precios especiales"}],updatedAt:serverTimestamp()},{merge:true});$("#configMsg").style.color="var(--ok)";$("#configMsg").textContent="Configuración guardada.";await log("Actualizó configuración")}catch(e){$("#configMsg").textContent="No fue posible guardar."}};
+$("#saveConfig").onclick=async()=>{try{await setDoc(doc(db,"configuracion","empresa"),{nombre:$("#businessName").value.trim(),whatsapp:$("#whatsapp").value.trim(),logo:$("#businessLogo")?.value.trim()||"",moneda:$("#currency")?.value||"MXN",facebook:$("#cfgFacebook")?.value.trim()||"",instagram:$("#cfgInstagram")?.value.trim()||"",beneficios:[{icon:"🚚",title:"Envíos seguros",text:"A todo México"},{icon:"🛡️",title:"Productos originales",text:"Garantía de autenticidad"},{icon:"🎧",title:"Atención personalizada",text:"Estamos para ayudarte"},{icon:"🔒",title:"Compra segura",text:"Tus datos protegidos"},{icon:"🏅",title:"Mayoreo disponible",text:"Precios especiales"}],filtrosCatalogo:{oferta:$("#filterOferta")?.checked!==false,promocion:$("#filterPromocion")?.checked!==false,destacado:$("#filterDestacado")?.checked!==false,nuevo:$("#filterNuevo")?.checked!==false,proximoLanzamiento:$("#filterProximo")?.checked!==false,categorias:$("#filterCategorias")?.checked!==false},updatedAt:serverTimestamp()},{merge:true});$("#configMsg").style.color="var(--ok)";$("#configMsg").textContent="Configuración guardada.";await log("Actualizó configuración")}catch(e){$("#configMsg").textContent="No fue posible guardar."}};
 const modal=$("#modal");function openM(t,h){$("#modalTitle").textContent=t;$("#formFields").innerHTML=h;modal.classList.add("open")}function closeM(){modal.classList.remove("open");entity=editing=null}$("#closeModal").onclick=$("#cancelModal").onclick=closeM;
 function drive(v){if(!v)return"";let m=v.match(/\/d\/([^/]+)/)||v.match(/[?&]id=([^&]+)/);return m?`https://drive.google.com/thumbnail?id=${m[1]}&sz=w1000`:v}
 async function loadCategories(){
@@ -250,7 +297,7 @@ async function refreshAllData(silent=false){
   ["pedidos",loadOrders],["clientes",loadCRMAdvanced],["ventas",loadSales],
   ["cobranza",loadCollections],["dashboard",loadDashboardReal],["reportes",async()=>{}],
   ["documentos",loadDocumentCenter],["inteligencia",loadIntelligence],["usuarios",loadUsers],
-  ["respaldos",loadBackups],["notificaciones",loadNotifications],["bitácora",loadAudit]
+  ["respaldos",loadBackupsAdvanced],["notificaciones",loadNotifications],["bitácora",loadAudit]
  ];
  const results=await Promise.allSettled(jobs.map(([,fn])=>fn()));
  let errors=[];results.forEach((r,i)=>{if(r.status==="rejected"){errors.push(jobs[i][0]);console.error("Refresh "+jobs[i][0],r.reason)}});
@@ -267,7 +314,8 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden&&auth.curr
 setTimeout(()=>{if(auth.currentUser)refreshAllData(true)},2500);
 
 async function loadCompanyConfig(){
- try{let s=await getDoc(doc(db,"configuracion","empresa"));if(!s.exists())return;let d=s.data();if($("#businessName"))$("#businessName").value=d.nombre||"";if($("#whatsapp"))$("#whatsapp").value=d.whatsapp||"";if($("#businessLogo"))$("#businessLogo").value=d.logo||"";if($("#currency"))$("#currency").value=d.moneda||"MXN";if($("#cfgFacebook"))$("#cfgFacebook").value=d.facebook||"";if($("#cfgInstagram"))$("#cfgInstagram").value=d.instagram||"";updateLogoPreview()}catch(e){}
+ try{let s=await getDoc(doc(db,"configuracion","empresa"));if(!s.exists())return;let d=s.data();if($("#businessName"))$("#businessName").value=d.nombre||"";if($("#whatsapp"))$("#whatsapp").value=d.whatsapp||"";if($("#businessLogo"))$("#businessLogo").value=d.logo||"";if($("#currency"))$("#currency").value=d.moneda||"MXN";if($("#cfgFacebook"))$("#cfgFacebook").value=d.facebook||"";if($("#cfgInstagram"))$("#cfgInstagram").value=d.instagram||"";
+ let fc=d.filtrosCatalogo||{};if($("#filterOferta"))$("#filterOferta").checked=fc.oferta!==false;if($("#filterPromocion"))$("#filterPromocion").checked=fc.promocion!==false;if($("#filterDestacado"))$("#filterDestacado").checked=fc.destacado!==false;if($("#filterNuevo"))$("#filterNuevo").checked=fc.nuevo!==false;if($("#filterProximo"))$("#filterProximo").checked=fc.proximoLanzamiento!==false;if($("#filterCategorias"))$("#filterCategorias").checked=fc.categorias!==false;updateLogoPreview()}catch(e){}
 }
 function driveImage(v){if(!v)return"";let m=v.match(/\/d\/([^/]+)/)||v.match(/[?&]id=([^&]+)/);return m?`https://drive.google.com/thumbnail?id=${m[1]}&sz=w1000`:v}
 function updateLogoPreview(){let p=$("#businessLogoPreview"),v=$("#businessLogo")?.value||"";if(p){p.src=driveImage(v);p.style.display=v?"block":"none"}}
@@ -429,3 +477,146 @@ function renderRecommendations(d){
 function renderIntelChart(sales,days){let rows=[];for(let i=days-1;i>=0;i--){let d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-i);let total=sales.filter(v=>sameDay(tsDate(v.createdAt),d)).reduce((s,v)=>s+Number(v.total||0),0);rows.push({d,total})}let max=Math.max(...rows.map(x=>x.total),1);$("#intelSalesChart").innerHTML=rows.map(x=>`<div class="intel-col"><div class="intel-bar" title="${mx(x.total)}" style="height:${Math.max(3,x.total/max*175)}px"></div><small>${x.d.getDate()}/${x.d.getMonth()+1}</small></div>`).join("")}
 $("#intelPeriod").onchange=renderIntelligence;
 setTimeout(loadIntelligence,2100);
+
+let aiData={sales:[],orders:[],products:[],clients:[],payments:[],tasks:[],inventory:[]};
+const aiQuestions=[
+"¿Cuánto vendí este mes?","¿Cuál es mi producto más vendido?","¿Cuál tiene mayor utilidad?","¿Qué producto tiene muchas vistas pero pocas ventas?","¿Qué clientes me deben?","¿Quiénes son mis mejores clientes?","¿Qué productos debo reabastecer?","¿Qué productos están agotados?","¿Cuánto dinero tengo por cobrar?","¿Cuál es mi ticket promedio?","¿Qué clientes llevan mucho tiempo sin comprar?","¿Qué promociones me convendría realizar?","¿Cómo se compara este mes contra el anterior?","¿Cuáles son mis productos con menor movimiento?","¿Qué tareas CRM están vencidas?","¿Qué pedidos siguen sin convertirse en venta?","¿Cuánto margen estoy obteniendo?","¿Qué debería revisar hoy?","¿Dónde estoy perdiendo oportunidades?","Dame un resumen ejecutivo de mi negocio."
+];
+async function loadAIAssistant(){
+ try{
+  const defs=[["sales","ventas"],["orders","pedidos"],["products","productos"],["clients","clientes"],["payments","abonos"],["tasks","tareasCRM"],["inventory","movimientosInventario"]];
+  const results=await Promise.allSettled(defs.map(([,col])=>getDocs(collection(db,col))));
+  let failed=[];
+  results.forEach((r,i)=>{let [key,col]=defs[i];if(r.status==="fulfilled")aiData[key]=r.value.docs.map(d=>({id:d.id,...d.data()}));else{aiData[key]=[];failed.push(col);console.error("IA collection "+col,r.reason)}});
+  if(failed.length && $("#aiLastSync"))$("#aiLastSync").textContent="Carga parcial: "+failed.join(", ");
+  $("#aiLastSync").textContent="Datos actualizados · "+new Date().toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"});if($("#aiSyncDot"))$("#aiSyncDot").style.color="#22c55e";
+  if($("#aiDataSales"))$("#aiDataSales").textContent=aiData.sales.length;if($("#aiDataOrders"))$("#aiDataOrders").textContent=aiData.orders.length;if($("#aiDataProducts"))$("#aiDataProducts").textContent=aiData.products.length;if($("#aiDataClients"))$("#aiDataClients").textContent=aiData.clients.length;if($("#aiDataPayments"))$("#aiDataPayments").textContent=aiData.payments.length;if($("#aiDataTasks"))$("#aiDataTasks").textContent=aiData.tasks.length;
+ }catch(e){console.error("Asistente IA",e)}
+}
+function renderAIQuestions(){
+ const groups=[
+  {title:"💰 Ventas y rentabilidad",items:[0,1,2,9,12,16]},
+  {title:"📦 Productos e inventario",items:[3,6,7,13]},
+  {title:"👥 Clientes y cobranza",items:[4,5,8,10]},
+  {title:"🎯 Oportunidades y seguimiento",items:[11,14,15,17,18]},
+  {title:"📊 Dirección",items:[19]}
+ ],icons=["💵","🏆","📈","👀","💳","⭐","📦","⛔","💰","🧾","🕒","🏷️","📊","🐢","⏰","🛍️","📈","🎯","🔎","📋"];
+ $("#aiQuickQuestions").innerHTML=groups.map(g=>`<div class="ai-category"><h4>${g.title}</h4><div class="ai-category-buttons">${g.items.map(i=>`<button type="button" class="ai-q" data-ai="${i}"><span class="ai-q-icon">${icons[i]}</span><span>${aiQuestions[i]}</span></button>`).join("")}</div></div>`).join("");
+ $$(".ai-q").forEach(b=>b.onclick=()=>showAIResult(Number(b.dataset.ai),b));
+}
+function aiMonth(offset=0){let d=new Date(),m=d.getMonth()+offset,y=d.getFullYear();while(m<0){m+=12;y--}while(m>11){m-=12;y++}return {m,y}}
+function aiSalesMonth(offset=0){let x=aiMonth(offset);return aiData.sales.filter(v=>{let d=tsDate(v.createdAt);return d&&d.getMonth()===x.m&&d.getFullYear()===x.y})}
+function aiProductUnits(sales=aiData.sales){let map={};sales.forEach(v=>(v.productos||[]).forEach(i=>map[i.productoID]=(map[i.productoID]||0)+Number(i.cantidad||0)));return map}
+function aiRevenue(sales){return sales.reduce((s,v)=>s+Number(v.total||0),0)}
+function aiProfit(sales){let profit=0;sales.forEach(v=>(v.productos||[]).forEach(i=>{let p=aiData.products.find(x=>x.id===i.productoID),qty=Number(i.cantidad||0),sell=Number(i.precioUnitario||0),cost=Number(p?.costo||0);profit+=(sell-cost)*qty}));return profit}
+function aiTopClients(){return [...aiData.clients].sort((a,b)=>Number(b.totalComprado||0)-Number(a.totalComprado||0))}
+function aiAnswer(q){
+ let n=q.toLowerCase(),thisMonth=aiSalesMonth(0),lastMonth=aiSalesMonth(-1),units=aiProductUnits(),monthRev=aiRevenue(thisMonth),profit=aiProfit(thisMonth);
+ let productRows=Object.entries(units).map(([id,qty])=>({p:aiData.products.find(x=>x.id===id),qty})).filter(x=>x.p).sort((a,b)=>b.qty-a.qty);
+ if(n.includes("cuánto vendí")||n.includes("cuanto vendi"))return `Este mes llevas <strong>${mx(monthRev)}</strong> en ${thisMonth.length} venta(s).`;
+ if(n.includes("más vendido")||n.includes("mas vendido")){let x=productRows[0];return x?`Tu producto más vendido es <strong>${x.p.nombre}</strong>, con ${x.qty} unidad(es).`:"Aún no hay ventas suficientes para determinarlo."}
+ if(n.includes("mayor utilidad")){let rows=aiData.products.map(p=>({p,margin:Number(p.precioMenudeo||0)-Number(p.costo||0)})).sort((a,b)=>b.margin-a.margin);let x=rows[0];return x?`Por margen unitario registrado, <strong>${x.p.nombre}</strong> encabeza con aproximadamente ${mx(x.margin)} por unidad a precio menudeo.`:"Faltan costos/precios."}
+ if(n.includes("muchas vistas")){let sold=new Set(productRows.slice(0,5).map(x=>x.p.id)),x=[...aiData.products].filter(p=>!sold.has(p.id)).sort((a,b)=>Number(b.numeroVistas||0)-Number(a.numeroVistas||0))[0];return x?`Revisaría <strong>${x.nombre}</strong>: tiene ${x.numeroVistas||0} vistas y no está entre los productos más vendidos.`:"No detecto un caso claro actualmente."}
+ if(n.includes("clientes me deben")){let d=aiData.clients.filter(c=>Number(c.totalPendiente||0)>0).sort((a,b)=>Number(b.totalPendiente)-Number(a.totalPendiente));return d.length?`Hay ${d.length} cliente(s) con saldo:<ul class="ai-answer-list">${d.slice(0,8).map(c=>`<li>${c.nombre||c.telefono}: ${mx(c.totalPendiente)}</li>`).join("")}</ul>`:"No hay saldos pendientes registrados."}
+ if(n.includes("mejores clientes")){let d=aiTopClients().slice(0,5);return `<ul class="ai-answer-list">${d.map((c,i)=>`<li>${i+1}. ${c.nombre||c.telefono}: ${mx(c.totalComprado)}</li>`).join("")||"<li>Sin datos.</li>"}</ul>`}
+ if(n.includes("reabastecer")){let d=aiData.products.filter(p=>p.activo!==false&&Number(p.stock||0)<=Number(p.stockMinimo||0));return d.length?`Conviene reabastecer ${d.length} producto(s):<ul class="ai-answer-list">${d.map(p=>`<li>${p.nombre}: stock ${p.stock||0}, mínimo ${p.stockMinimo||0}</li>`).join("")}</ul>`:"No hay productos bajo mínimo."}
+ if(n.includes("agotados")){let d=aiData.products.filter(p=>p.activo!==false&&Number(p.stock||0)<=0);return d.length?d.map(p=>p.nombre).join(", "):"No hay productos activos agotados."}
+ if(n.includes("dinero tengo por cobrar"))return `Tienes <strong>${mx(aiData.clients.reduce((s,c)=>s+Number(c.totalPendiente||0),0))}</strong> registrado por cobrar.`;
+ if(n.includes("ticket promedio"))return thisMonth.length?`Tu ticket promedio del mes es <strong>${mx(monthRev/thisMonth.length)}</strong>.`:"No hay ventas este mes.";
+ if(n.includes("mucho tiempo sin comprar")){let d=aiData.clients.filter(c=>daysSince(c.ultimaCompra||c.ultimaInteraccion||c.createdAt)>60);return d.length?`${d.length} cliente(s) llevan más de 60 días sin compra/interacción. Los primeros: ${d.slice(0,5).map(c=>c.nombre||c.telefono).join(", ")}.`:"No detecto clientes con más de 60 días de inactividad."}
+ if(n.includes("promociones me convendría")||n.includes("promociones me convendria")){let slow=[...aiData.products].filter(p=>p.activo!==false).sort((a,b)=>(units[a.id]||0)-(units[b.id]||0)).slice(0,3);return `Consideraría promociones para productos con menor movimiento: <strong>${slow.map(x=>x.nombre).join(", ")||"sin datos"}</strong>. Antes de descontar, revisa margen y stock.`}
+ if(n.includes("compara este mes")){let prev=aiRevenue(lastMonth),pct=prev?((monthRev-prev)/prev*100):monthRev?100:0;return `Mes actual: <strong>${mx(monthRev)}</strong>. Mes anterior: <strong>${mx(prev)}</strong>. Variación: <strong>${pct>=0?"+":""}${pct.toFixed(1)}%</strong>.`}
+ if(n.includes("menor movimiento")){let d=[...aiData.products].filter(p=>p.activo!==false).sort((a,b)=>(units[a.id]||0)-(units[b.id]||0)).slice(0,5);return `<ul class="ai-answer-list">${d.map(p=>`<li>${p.nombre}: ${units[p.id]||0} unidad(es)</li>`).join("")}</ul>`}
+ if(n.includes("tareas crm")&&n.includes("vencidas")){let d=aiData.tasks.filter(t=>t.estado!=="completada"&&tsDate(t.fechaProgramada)&&tsDate(t.fechaProgramada)<new Date());return `${d.length} tarea(s) CRM están vencidas.${d.length?` Clientes: ${d.slice(0,5).map(x=>x.clienteNombre).join(", ")}.`:""}`}
+ if(n.includes("pedidos")&&n.includes("sin convertirse")){let d=aiData.orders.filter(o=>o.estado==="nuevo");return `Hay <strong>${d.length}</strong> pedido(s) nuevos pendientes de convertir en venta.`}
+ if(n.includes("margen"))return monthRev?`La utilidad estimada del mes es <strong>${mx(profit)}</strong>, equivalente a un margen aproximado de <strong>${(profit/monthRev*100).toFixed(1)}%</strong>.`:"No hay ventas del mes para calcular margen.";
+ if(n.includes("qué debería revisar hoy")||n.includes("que deberia revisar hoy")||n.includes("perdiendo oportunidades"))return aiDailyBrief();
+ if(n.includes("resumen ejecutivo"))return aiExecutiveSummary();
+ return `Puedo analizar esa pregunta si se relaciona con ventas, productos, inventario, clientes, pedidos, cobranza o CRM. Prueba reformularla o utiliza una de las preguntas rápidas.`;
+}
+function aiDailyBrief(){let orders=aiData.orders.filter(o=>o.estado==="nuevo").length,debt=aiData.clients.reduce((s,c)=>s+Number(c.totalPendiente||0),0),low=aiData.products.filter(p=>p.activo!==false&&Number(p.stock||0)<=Number(p.stockMinimo||0)).length,over=aiData.tasks.filter(t=>t.estado!=="completada"&&tsDate(t.fechaProgramada)&&tsDate(t.fechaProgramada)<new Date()).length;return `<strong>Prioridades de hoy:</strong><ul class="ai-answer-list"><li>${orders} pedido(s) por atender.</li><li>${mx(debt)} por cobrar.</li><li>${low} producto(s) en stock bajo/agotado.</li><li>${over} seguimiento(s) CRM vencido(s).</li></ul>`}
+function aiExecutiveSummary(){let sales=aiSalesMonth(),rev=aiRevenue(sales),profit=aiProfit(sales),debt=aiData.clients.reduce((s,c)=>s+Number(c.totalPendiente||0),0),units=aiProductUnits(sales),top=Object.entries(units).sort((a,b)=>b[1]-a[1])[0],p=top?aiData.products.find(x=>x.id===top[0]):null;return `<strong>Resumen ejecutivo del mes</strong><ul class="ai-answer-list"><li>Ventas: ${mx(rev)} en ${sales.length} operación(es).</li><li>Utilidad estimada: ${mx(profit)}.</li><li>Por cobrar: ${mx(debt)}.</li><li>Clientes registrados: ${aiData.clients.length}.</li><li>Pedidos nuevos: ${aiData.orders.filter(o=>o.estado==="nuevo").length}.</li><li>Producto líder: ${p?p.nombre+" ("+top[1]+" unidades)":"sin datos suficientes"}.</li></ul>`}
+function askAI(q){if(!q.trim())return;$("#aiMessages").insertAdjacentHTML("beforeend",`<div class="ai-message user"><p>${escDoc(q)}</p></div>`);let answer=aiAnswer(q);$("#aiMessages").insertAdjacentHTML("beforeend",`<div class="ai-message assistant"><strong>AuraERP</strong><p>${answer}</p></div>`);$("#aiMessages").scrollTop=$("#aiMessages").scrollHeight;$("#aiQuestion").value=""}
+function showAIResult(index,button){
+ if(!aiData.products.length&&!aiData.sales.length&&!aiData.clients.length&&!aiData.orders.length){
+  $("#aiResultSubtitle").textContent="Datos aún no disponibles";
+  $("#aiResult").className="ai-result-content";
+  $("#aiResult").innerHTML='<h2>Esperando información</h2><div class="answer-box">AuraERP todavía no ha recibido datos de Firebase. Espera unos segundos. Si persiste, el indicador superior mostrará qué colección falló.</div>';
+  return;
+ }
+ $$(".ai-q").forEach(x=>x.classList.remove("selected"));if(button)button.classList.add("selected");
+ let q=aiQuestions[index],answer=aiAnswer(q);$("#aiResultSubtitle").textContent=q;
+ $("#aiResult").className="ai-result-content";$("#aiResult").innerHTML=`<h2>${escDoc(q)}</h2><div class="answer-box">${answer}</div>`;
+}
+
+
+const BACKUP_COLLECTIONS=["configuracion","usuarios","productos","categorias","clientes","pedidos","ventas","abonos","bitacora","movimientosInventario","tareasCRM","respaldos"];
+let validatedRestore=null;
+function backupFreq(){return localStorage.getItem("aura-backup-frequency")||"manual"}
+function backupDueDate(last,freq=backupFreq()){if(!last||freq==="manual")return null;let d=tsDate(last.createdAt)||new Date(),days={diario:1,semanal:7,quincenal:15,mensual:30}[freq]||0;d=new Date(d);d.setDate(d.getDate()+days);return d}
+async function loadBackupsAdvanced(){
+ try{
+  let s=await getDocs(collection(db,"respaldos"));backupHistory=s.docs.map(d=>d.data()).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+  $("#backupTable").innerHTML=backupHistory.map(x=>`<tr><td>${docDate(x.createdAt)}</td><td>${x.usuario||""}</td><td>${x.registros||0}</td><td>${x.version||"—"}</td><td>${x.tipo||"manual"}</td></tr>`).join("")||'<tr><td colspan="5">Sin respaldos.</td></tr>';
+  let last=backupHistory[0],freq=backupFreq(),next=backupDueDate(last,freq),due=next&&next<new Date();
+  $("#backupFrequency").value=freq;$("#backupReminder").value=localStorage.getItem("aura-backup-reminder")||"true";
+  $("#backupLastKPI").textContent=last?tsDate(last.createdAt)?.toLocaleDateString("es-MX"):"Nunca";$("#backupNextKPI").textContent=next?next.toLocaleDateString("es-MX"):(freq==="manual"?"Manual":"Pendiente");$("#backupCountKPI").textContent=backupHistory.length;$("#backupHealthKPI").textContent=due?"Vencido":last?"Protegido":"Sin respaldo";$("#backupHealthKPI").style.color=due?"#ef4444":last?"#22c55e":"#f59e0b";
+ }catch(e){console.error("Respaldos",e)}
+}
+async function makeBackupAdvanced(){
+ let btn=$("#makeBackup"),msg=$("#backupMsg");btn.disabled=true;btn.textContent="Generando...";
+ try{
+  let payload={meta:{app:"AuraERP",format:2,version:"1.7.0",createdAt:new Date().toISOString(),createdBy:auth.currentUser.email,collections:BACKUP_COLLECTIONS.filter(x=>x!=="respaldos")},data:{}},count=0;
+  for(let name of payload.meta.collections){let s=await getDocs(collection(db,name));payload.data[name]=s.docs.map(d=>({id:d.id,...plain(d.data())}));count+=s.size}
+  payload.meta.recordCount=count;
+  let blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=`AuraERP-backup-${new Date().toISOString().replaceAll(":","-").slice(0,19)}.json`;link.click();URL.revokeObjectURL(url);
+  await addDoc(collection(db,"respaldos"),{createdAt:serverTimestamp(),usuario:auth.currentUser.email,uid:auth.currentUser.uid,registros:count,tipo:"manual",version:"1.7.0"});await log(`Generó respaldo v1.7.0 de ${count} registros`);msg.style.color="var(--ok)";msg.textContent=`Respaldo generado: ${count} registros.`;await loadBackupsAdvanced();
+ }catch(e){console.error(e);msg.textContent="No fue posible generar el respaldo."}finally{btn.disabled=false;btn.textContent="⬇ Generar respaldo ahora"}
+}
+function validateBackupObject(obj){
+ if(!obj||typeof obj!=="object")throw new Error("JSON inválido");
+ if(obj.meta?.app!=="AuraERP")throw new Error("El archivo no pertenece a AuraERP");
+ if(!obj.data||typeof obj.data!=="object")throw new Error("El respaldo no contiene datos");
+ let allowed=BACKUP_COLLECTIONS.filter(x=>x!=="respaldos"),names=Object.keys(obj.data),unknown=names.filter(x=>!allowed.includes(x));if(unknown.length)throw new Error("Colecciones no reconocidas: "+unknown.join(", "));
+ let count=0;for(let name of names){if(!Array.isArray(obj.data[name]))throw new Error(`Colección ${name} inválida`);for(let d of obj.data[name]){if(!d.id||typeof d.id!=="string")throw new Error(`Documento sin ID en ${name}`);count++}}
+ return {count,names,version:obj.meta.version||"desconocida",date:obj.meta.createdAt||"—"};
+}
+async function validateSelectedBackup(){
+ let f=$("#restoreFile").files[0],box=$("#restoreValidation");validatedRestore=null;$("#restoreBackup").disabled=true;if(!f){box.className="restore-validation invalid";box.textContent="Selecciona un archivo.";return}
+ try{let obj=JSON.parse(await f.text()),info=validateBackupObject(obj);validatedRestore=obj;box.className="restore-validation valid";box.innerHTML=`✓ Respaldo válido<br>Versión: ${escDoc(info.version)} · ${info.count} registros · ${info.names.length} colecciones<br>Creado: ${escDoc(info.date)}`;$("#restoreBackup").disabled=false}catch(e){box.className="restore-validation invalid";box.textContent="✕ "+e.message}
+}
+function restoreValue(v){if(Array.isArray(v))return v.map(restoreValue);if(v&&typeof v==="object"){let o={};for(let [k,x] of Object.entries(v)){if(typeof x==="string"&&/At$|fecha|ultimaCompra|proximaAccion/i.test(k)&&!isNaN(Date.parse(x)))o[k]=new Date(x);else o[k]=restoreValue(x)}return o}return v}
+async function restoreValidatedBackup(){
+ if(!validatedRestore)return;let info=validateBackupObject(validatedRestore),phrase=prompt(`ATENCIÓN: se escribirán ${info.count} registros en Firebase.\n\nEscribe RESTAURAR para continuar.`);if(phrase!=="RESTAURAR")return alert("Restauración cancelada.");
+ if(!confirm("Última confirmación: esta operación puede reemplazar documentos con el mismo ID. ¿Continuar?"))return;
+ let btn=$("#restoreBackup"),box=$("#restoreValidation");btn.disabled=true;btn.textContent="Restaurando...";let done=0;
+ try{
+  for(let [name,docs] of Object.entries(validatedRestore.data)){for(let d of docs){let {id,...data}=d;await setDoc(doc(db,name,id),restoreValue(data),{merge:true});done++;box.textContent=`Restaurando ${done} de ${info.count} registros...`}}
+  await log(`Restauró respaldo AuraERP: ${done} registros`);box.className="restore-validation valid";box.textContent=`✓ Restauración completada: ${done} registros.`;validatedRestore=null;await refreshAllData(true)
+ }catch(e){console.error(e);box.className="restore-validation invalid";box.textContent=`La restauración se detuvo en ${done}/${info.count}: ${e.message}`}finally{btn.disabled=true;btn.textContent="Restaurar datos"}
+}
+function checkBackupReminder(){if((localStorage.getItem("aura-backup-reminder")||"true")!=="true")return;let last=backupHistory?.[0],next=backupDueDate(last);if(next&&next<new Date())setTimeout(()=>{if(confirm("AuraERP recomienda generar un respaldo. La fecha programada ya venció. ¿Abrir Respaldos?")){let b=document.querySelector('[data-module="respaldos"]');if(b)b.click()}},800)}
+$("#makeBackup").onclick=makeBackupAdvanced;$("#saveBackupConfig").onclick=()=>{localStorage.setItem("aura-backup-frequency",$("#backupFrequency").value);localStorage.setItem("aura-backup-reminder",$("#backupReminder").value);$("#backupMsg").style.color="var(--ok)";$("#backupMsg").textContent="Programación guardada.";loadBackupsAdvanced()};$("#validateBackup").onclick=validateSelectedBackup;$("#restoreBackup").onclick=restoreValidatedBackup;$("#restoreFile").onchange=()=>{$("#restoreValidation").className="restore-validation";$("#restoreValidation").textContent="Archivo seleccionado. Pulsa Validar archivo.";validatedRestore=null;$("#restoreBackup").disabled=true};
+setTimeout(async()=>{await loadBackupsAdvanced();checkBackupReminder()},2500);
+
+// v1.7.2 - single, defensive boot for Intelligence Center.
+async function bootIntelligenceCenter(){
+ const list=$("#aiQuickQuestions"),result=$("#aiResult");
+ if(!list||!result)return;
+ try{
+  renderAIQuestions();
+  if($("#aiLastSync"))$("#aiLastSync").textContent="Consultando Firebase...";
+  if($("#aiSyncDot"))$("#aiSyncDot").style.color="#f59e0b";
+  await loadAIAssistant();
+  if($("#aiLastSync") && aiData.products.length===0 && aiData.sales.length===0 && aiData.clients.length===0){
+   $("#aiLastSync").textContent="Conectado · sin datos visibles";
+  }
+ }catch(e){
+  console.error("Intelligence boot",e);
+  if($("#aiLastSync"))$("#aiLastSync").textContent="Error al cargar datos";
+  if($("#aiSyncDot"))$("#aiSyncDot").style.color="#ef4444";
+  result.className="ai-result-content";
+  result.innerHTML=`<h2>No fue posible iniciar Inteligencia</h2><div class="answer-box">Detalle: ${escDoc(e?.code||e?.message||"Error desconocido")}</div>`;
+ }
+}
+// Intelligence v1.7.3 boots independently from js/intelligence.js

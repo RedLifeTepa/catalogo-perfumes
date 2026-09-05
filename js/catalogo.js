@@ -34,17 +34,20 @@ function renderConfig(){
 }
 
 function renderFilters(){
+ const norm=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+ const upcoming="proximos lanzamientos",cfg=business.filtrosCatalogo||{};
  const specials=[
-  ["","▦","Todos"],["oferta","🏷️","Ofertas"],["promocion","📣","Promociones"],["destacado","⭐","Destacados"],["nuevo","🟢","Nuevos"],["proximoLanzamiento","🚀","Próximos lanzamientos"],["proximoLanzamiento","🚀","Próximos lanzamientos"]
- ];
- $("#chips").innerHTML=specials.map(([v,i,t],n)=>`<button class="chip ${n===0?"active":""}" data-filter="${v}">${i} ${t}</button>`).join("")+
- cats.map(c=>`<button class="chip" data-cat="${c.id}">▣ ${c.nombre}</button>`).join("");
- $("#chips").onclick=e=>{
-  const b=e.target.closest(".chip");if(!b)return;
-  selectedCategory=b.dataset.cat||"";specialFilter=b.dataset.filter||"";
-  document.querySelectorAll(".chip").forEach(x=>x.classList.toggle("active",x===b));
-  renderProducts();
- };
+  ["","▦","Todos",true],
+  ["oferta","🏷️","Ofertas",cfg.oferta!==false],
+  ["promocion","📣","Promociones",cfg.promocion!==false],
+  ["destacado","⭐","Destacados",cfg.destacado!==false],
+  ["nuevo","🟢","Nuevos",cfg.nuevo!==false],
+  ["proximoLanzamiento","🚀","Próximos lanzamientos",cfg.proximoLanzamiento!==false]
+ ].filter(x=>x[3]);
+ const categoryButtons=cfg.categorias===false?[]:cats.filter(c=>norm(c.nombre)!==upcoming).map(c=>`<button class="chip" data-cat="${c.id}">▣ ${c.nombre}</button>`);
+ $("#chips").innerHTML=specials.map(([v,i,t],n)=>`<button class="chip ${n===0?"active":""}" data-filter="${v}">${i} ${t}</button>`).join("")+categoryButtons.join("");
+ let upcomingSeen=false;[...$("#chips").querySelectorAll(".chip")].forEach(btn=>{if(norm(btn.textContent).includes(upcoming)){if(upcomingSeen)btn.remove();else upcomingSeen=true}});
+ $("#chips").onclick=e=>{const b=e.target.closest(".chip");if(!b)return;selectedCategory=b.dataset.cat||"";specialFilter=b.dataset.filter||"";document.querySelectorAll(".chip").forEach(x=>x.classList.toggle("active",x===b));renderProducts()};
 }
 
 function getFiltered(){
