@@ -1,11 +1,11 @@
-# AuraERP v1.7.12 - Public Information Pages
+# AuraERP v1.7.13 - Mobile + Public Links Fix
 
-- Eliminado `Mi cuenta` del catálogo público porque no existe un portal de cliente asociado.
-- Página real de Preguntas frecuentes.
-- FAQ administrable desde Configuración: preguntas/respuestas ilimitadas.
-- Página real de Términos y condiciones.
-- Página real de Política de privacidad.
-- Nombre comercial se obtiene de Configuración.
-- Año del copyright se actualiza automáticamente.
-- Fecha de actualización de términos/privacidad se genera automáticamente.
-- Enlaces del footer ahora navegan a páginas reales.
+- Eliminado definitivamente `Mi cuenta` del HTML público.
+- Footer enlaza explícitamente a preguntas.html, terminos.html y privacidad.html.
+- Service Worker incluye las tres páginas y usa network-first.
+- Header público reorganizado para móvil.
+- Footer público responsive y enlaces táctiles.
+- Panel administrador móvil ocupa el 100% del ancho.
+- Sidebar móvil se comporta como drawer y se cierra al seleccionar módulo.
+- KPIs se adaptan 2 columnas / 1 columna.
+- Tablas mantienen scroll interno.

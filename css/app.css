@@ -139,3 +139,25 @@ html,body{height:100%}
 @media(max-width:900px){#app{grid-template-columns:200px minmax(0,1fr)!important}.content{padding-left:20px!important;padding-right:20px!important}}
 
 .faq-editor{display:grid;gap:12px}.faq-edit-row{border:1px solid var(--border);border-radius:12px;padding:13px;background:var(--card)}.faq-edit-row textarea{min-height:80px;width:100%}
+
+/* v1.7.13 mobile admin layout */
+@media(max-width:800px){
+ #app{display:block!important;height:100dvh!important;overflow:hidden!important}
+ .sidebar{position:fixed!important;z-index:1000!important;left:0!important;top:0!important;width:min(82vw,280px)!important;min-width:0!important;height:100dvh!important;transform:translateX(-100%)!important;transition:transform .2s ease!important;box-shadow:10px 0 30px rgba(0,0,0,.25)!important}
+ .sidebar.mobile-open{transform:translateX(0)!important}
+ .main,.app-main{width:100%!important;height:100dvh!important;margin:0!important;overflow-y:auto!important}
+ .topbar{position:sticky!important;top:0!important;z-index:900!important;display:flex!important;gap:8px!important;padding:8px 10px!important;min-height:58px!important}
+ .topbar input{min-width:0!important;flex:1!important}
+ .content{padding:18px 14px 40px!important;width:100%!important;max-width:none!important}
+ .section-head{align-items:flex-start!important;gap:12px!important;flex-wrap:wrap!important}
+ .kpis{grid-template-columns:1fr 1fr!important;gap:12px!important}
+ .kpi{min-width:0!important;padding:16px!important}
+ .kpi strong{font-size:26px!important}
+ .card{max-width:100%!important}
+ .table-wrap{overflow-x:auto!important}
+ .mobile-menu-btn{display:inline-grid!important}
+}
+@media(max-width:480px){
+ .kpis{grid-template-columns:1fr!important}
+ .content h1{font-size:28px!important}
+}

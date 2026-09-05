@@ -638,3 +638,10 @@ async function saveFaqConfig(){
 const addFaqBtn=$("#addFaqRow");if(addFaqBtn)addFaqBtn.onclick=()=>{faqRows.push({pregunta:"",respuesta:""});renderFaqEditor()};
 const originalSaveConfig=$("#saveConfig")?.onclick;if($("#saveConfig"))$("#saveConfig").addEventListener("click",()=>setTimeout(saveFaqConfig,50));
 setTimeout(loadFaqConfig,1300);
+
+// v1.7.13 mobile sidebar
+document.addEventListener("click",e=>{
+ const menu=e.target.closest("#mobileMenu,.mobile-menu-btn,[data-mobile-menu]");
+ if(menu){document.querySelector(".sidebar")?.classList.toggle("mobile-open");return}
+ if(e.target.closest("#nav [data-module]")&&window.innerWidth<=800)document.querySelector(".sidebar")?.classList.remove("mobile-open");
+});
