@@ -34,11 +34,21 @@ function renderConfig(){
 }
 
 function renderFilters(){
+ const normalizeLabel=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+ const upcomingKey="proximos lanzamientos";
  const specials=[
   ["","▦","Todos"],["oferta","🏷️","Ofertas"],["promocion","📣","Promociones"],["destacado","⭐","Destacados"],["nuevo","🟢","Nuevos"],["proximoLanzamiento","🚀","Próximos lanzamientos"]
  ];
- $("#chips").innerHTML=specials.map(([v,i,t],n)=>`<button class="chip ${n===0?"active":""}" data-filter="${v}">${i} ${t}</button>`).join("")+
- cats.filter(c=>!/^pr[oó]ximos\s+lanzamientos$/i.test((c.nombre||"").trim())).map(c=>`<button class="chip" data-cat="${c.id}">▣ ${c.nombre}</button>`).join("");
+ const visibleCats=cats.filter(c=>normalizeLabel(c.nombre)!==upcomingKey);
+ const html=specials.map(([v,i,t],n)=>`<button class="chip ${n===0?"active":""}" data-filter="${v}">${i} ${t}</button>`).join("")+
+  visibleCats.map(c=>`<button class="chip" data-cat="${c.id}">▣ ${c.nombre}</button>`).join("");
+ $("#chips").innerHTML=html;
+ // Safety pass: never allow duplicate visible chip labels, regardless of their source.
+ const seen=new Set();
+ [...$("#chips").querySelectorAll(".chip")].forEach(btn=>{
+   const key=normalizeLabel(btn.textContent.replace(/^[^\p{L}\p{N}]+/u,""));
+   if(seen.has(key))btn.remove();else seen.add(key);
+ });
  $("#chips").onclick=e=>{
   const b=e.target.closest(".chip");if(!b)return;
   selectedCategory=b.dataset.cat||"";specialFilter=b.dataset.filter||"";

@@ -1,4 +1,51 @@
 import {auth,db,onAuthStateChanged,signInWithEmailAndPassword,signOut,sendPasswordResetEmail,doc,getDoc,setDoc,addDoc,collection,serverTimestamp,getDocs,updateDoc,query,where,limit,runTransaction} from "./firebase-config.js";
+
+// v1.7.7 SIMPLE ASSISTANT - bound before the rest of AuraERP initializes.
+const SIMPLE_AI_QUESTIONS=["¿Cuánto vendí este mes?","¿Cuál es mi producto más vendido?","¿Cuál tiene mayor utilidad?","¿Qué producto tiene muchas vistas pero pocas ventas?","¿Qué clientes me deben?","¿Quiénes son mis mejores clientes?","¿Qué productos debo reabastecer?","¿Qué productos están agotados?","¿Cuánto dinero tengo por cobrar?","¿Cuál es mi ticket promedio?","¿Qué clientes llevan mucho tiempo sin comprar?","¿Qué promociones me convendría realizar?","¿Cómo se compara este mes contra el anterior?","¿Cuáles son mis productos con menor movimiento?","¿Qué tareas CRM están vencidas?","¿Qué pedidos siguen sin convertirse en venta?","¿Cuánto margen estoy obteniendo?","¿Qué debería revisar hoy?","¿Dónde estoy perdiendo oportunidades?","Dame un resumen ejecutivo de mi negocio."];
+let simpleAI={loaded:false,sales:[],orders:[],products:[],clients:[],payments:[],tasks:[]};
+const saiDate=v=>v?.toDate?v.toDate():v?.seconds?new Date(v.seconds*1000):v?new Date(v):null;
+const saiMoney=n=>new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN"}).format(Number(n||0));
+async function simpleAILoad(){
+ const status=document.querySelector("#aiSimpleStatus");if(status)status.textContent="Consultando Firebase...";
+ const defs=[["sales","ventas"],["orders","pedidos"],["products","productos"],["clients","clientes"],["payments","abonos"],["tasks","tareasCRM"]];
+ const rs=await Promise.allSettled(defs.map(x=>getDocs(collection(db,x[1]))));let bad=[];
+ rs.forEach((r,i)=>{let [k,c]=defs[i];if(r.status==="fulfilled")simpleAI[k]=r.value.docs.map(d=>({id:d.id,...d.data()}));else bad.push(c)});
+ simpleAI.loaded=true;if(status){status.textContent=bad.length?"Carga parcial: "+bad.join(", "):`Datos listos: ${simpleAI.products.length} productos · ${simpleAI.clients.length} clientes · ${simpleAI.sales.length} ventas · ${simpleAI.orders.length} pedidos`;status.className="ai-simple-status "+(bad.length?"warn":"ok")}
+}
+function saiMonth(offset=0){let n=new Date(),m=n.getMonth()+offset,y=n.getFullYear();while(m<0){m+=12;y--}while(m>11){m-=12;y++}return simpleAI.sales.filter(v=>{let d=saiDate(v.createdAt);return d&&d.getMonth()===m&&d.getFullYear()===y})}
+const saiRev=s=>s.reduce((a,v)=>a+Number(v.total||0),0);
+function saiUnits(s=simpleAI.sales){let m={};s.forEach(v=>(v.productos||[]).forEach(i=>m[i.productoID]=(m[i.productoID]||0)+Number(i.cantidad||0)));return m}
+function saiProfit(s){let z=0;s.forEach(v=>(v.productos||[]).forEach(i=>{let p=simpleAI.products.find(x=>x.id===i.productoID);z+=(Number(i.precioUnitario||0)-Number(p?.costo||0))*Number(i.cantidad||0)}));return z}
+const saiList=x=>`<ul>${x.map(v=>`<li>${v}</li>`).join("")}</ul>`;
+function simpleAIAnswer(i){
+ let cur=saiMonth(),prev=saiMonth(-1),rev=saiRev(cur),u=saiUnits(),rank=Object.entries(u).sort((a,b)=>b[1]-a[1]),pft=saiProfit(cur);
+ if(i===0)return `Este mes llevas <strong>${saiMoney(rev)}</strong> en ${cur.length} venta(s).`;
+ if(i===1){let x=rank[0],p=x&&simpleAI.products.find(z=>z.id===x[0]);return p?`<strong>${p.nombre}</strong> es el más vendido con ${x[1]} unidad(es).`:"Aún no hay ventas suficientes."}
+ if(i===2){let x=[...simpleAI.products].map(p=>({p,m:Number(p.precioMenudeo||0)-Number(p.costo||0)})).sort((a,b)=>b.m-a.m)[0];return x?`<strong>${x.p.nombre}</strong> tiene el mayor margen unitario estimado: ${saiMoney(x.m)}.`:"Faltan costos o precios."}
+ if(i===3){let sold=new Set(rank.slice(0,5).map(x=>x[0])),x=[...simpleAI.products].filter(p=>!sold.has(p.id)).sort((a,b)=>Number(b.numeroVistas||0)-Number(a.numeroVistas||0))[0];return x?`Revisa <strong>${x.nombre}</strong>: ${x.numeroVistas||0} vistas y no está entre los más vendidos.`:"No detecto un caso claro."}
+ if(i===4){let x=simpleAI.clients.filter(c=>Number(c.totalPendiente||0)>0);return x.length?`${x.length} cliente(s) tienen saldo.${saiList(x.slice(0,8).map(c=>`${c.nombre||c.telefono}: ${saiMoney(c.totalPendiente)}`))}`:"No hay saldos pendientes."}
+ if(i===5)return saiList([...simpleAI.clients].sort((a,b)=>Number(b.totalComprado||0)-Number(a.totalComprado||0)).slice(0,5).map((c,j)=>`${j+1}. ${c.nombre||c.telefono}: ${saiMoney(c.totalComprado)}`));
+ if(i===6){let x=simpleAI.products.filter(p=>p.activo!==false&&Number(p.stock||0)<=Number(p.stockMinimo||0));return x.length?saiList(x.map(p=>`${p.nombre}: stock ${p.stock||0}, mínimo ${p.stockMinimo||0}`)):"No hay productos bajo mínimo."}
+ if(i===7){let x=simpleAI.products.filter(p=>p.activo!==false&&Number(p.stock||0)<=0);return x.length?saiList(x.map(p=>p.nombre)):"No hay productos agotados."}
+ if(i===8)return `Tienes <strong>${saiMoney(simpleAI.clients.reduce((s,c)=>s+Number(c.totalPendiente||0),0))}</strong> por cobrar.`;
+ if(i===9)return cur.length?`Ticket promedio: <strong>${saiMoney(rev/cur.length)}</strong>.`:"No hay ventas este mes.";
+ if(i===10){let x=simpleAI.clients.filter(c=>{let d=saiDate(c.ultimaCompra||c.ultimaInteraccion||c.createdAt);return !d||(Date.now()-d.getTime())/86400000>60});return x.length?`${x.length} cliente(s) llevan más de 60 días sin actividad.${saiList(x.slice(0,8).map(c=>c.nombre||c.telefono))}`:"No detecto clientes inactivos."}
+ if(i===11){let x=[...simpleAI.products].filter(p=>p.activo!==false).sort((a,b)=>(u[a.id]||0)-(u[b.id]||0)).slice(0,3);return `Consideraría promociones para <strong>${x.map(p=>p.nombre).join(", ")||"productos de baja rotación"}</strong>.`;}
+ if(i===12){let pr=saiRev(prev),pct=pr?((rev-pr)/pr*100):(rev?100:0);return `Mes actual: <strong>${saiMoney(rev)}</strong>. Anterior: <strong>${saiMoney(pr)}</strong>. Variación: <strong>${pct>=0?"+":""}${pct.toFixed(1)}%</strong>.`}
+ if(i===13){let x=[...simpleAI.products].filter(p=>p.activo!==false).sort((a,b)=>(u[a.id]||0)-(u[b.id]||0)).slice(0,5);return saiList(x.map(p=>`${p.nombre}: ${u[p.id]||0} unidad(es)`));}
+ if(i===14){let x=simpleAI.tasks.filter(t=>t.estado!=="completada"&&saiDate(t.fechaProgramada)&&saiDate(t.fechaProgramada)<new Date());return `${x.length} tarea(s) CRM vencida(s).`;}
+ if(i===15)return `Hay <strong>${simpleAI.orders.filter(o=>o.estado==="nuevo").length}</strong> pedido(s) nuevos pendientes.`;
+ if(i===16)return rev?`Utilidad estimada: <strong>${saiMoney(pft)}</strong>. Margen: <strong>${(pft/rev*100).toFixed(1)}%</strong>.`:"No hay ventas para calcular margen.";
+ if(i===17||i===18){let o=simpleAI.orders.filter(x=>x.estado==="nuevo").length,debt=simpleAI.clients.reduce((s,c)=>s+Number(c.totalPendiente||0),0),low=simpleAI.products.filter(p=>p.activo!==false&&Number(p.stock||0)<=Number(p.stockMinimo||0)).length;return saiList([`${o} pedido(s) por atender`,`${saiMoney(debt)} por cobrar`,`${low} producto(s) con stock bajo/agotado`]);}
+ let top=rank[0],tp=top&&simpleAI.products.find(x=>x.id===top[0]);return saiList([`Ventas del mes: ${saiMoney(rev)}`,`Utilidad estimada: ${saiMoney(pft)}`,`Por cobrar: ${saiMoney(simpleAI.clients.reduce((s,c)=>s+Number(c.totalPendiente||0),0))}`,`Clientes: ${simpleAI.clients.length}`,`Pedidos nuevos: ${simpleAI.orders.filter(o=>o.estado==="nuevo").length}`,`Producto líder: ${tp?tp.nombre:"sin datos"}`]);
+}
+document.addEventListener("click",async e=>{
+ const b=e.target.closest("[data-simple-ai]");if(!b)return;
+ document.querySelectorAll("[data-simple-ai]").forEach(x=>x.classList.remove("active"));b.classList.add("active");
+ const i=Number(b.dataset.simpleAi),title=document.querySelector("#aiSimpleTitle"),ans=document.querySelector("#aiSimpleAnswer");
+ if(title)title.textContent=SIMPLE_AI_QUESTIONS[i];if(ans)ans.textContent="Consultando...";
+ try{if(!simpleAI.loaded)await simpleAILoad();if(ans)ans.innerHTML=simpleAIAnswer(i)}catch(err){console.error("Simple AI",err);if(ans)ans.textContent="No fue posible consultar Firebase: "+(err.code||err.message)}
+});
 const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);let cats=[],products=[],entity=null,editing=null;
 async function log(action){try{await addDoc(collection(db,"bitacora"),{action,uid:auth.currentUser?.uid,email:auth.currentUser?.email,createdAt:serverTimestamp()})}catch(e){console.warn(e)}}
 $("#loginForm").onsubmit=async e=>{e.preventDefault();try{await signInWithEmailAndPassword(auth,$("#email").value.trim(),$("#password").value)}catch(x){$("#loginMsg").textContent="No fue posible iniciar sesión."}};
