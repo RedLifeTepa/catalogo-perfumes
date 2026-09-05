@@ -390,12 +390,28 @@ function escDoc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":
 function docMoney(n){return new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN"}).format(Number(n||0))}
 function docDate(v){return tsDate(v)?.toLocaleString("es-MX")||"—"}
 async function printProfessional(title,folio,body,meta=""){
- let c=await companyForDoc(),logo=c.logo?driveImage(c.logo):"",w=window.open("","_blank","width=1000,height=800");if(!w)return alert("Permite ventanas emergentes para generar el documento.");
- w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escDoc(title)} ${escDoc(folio)}</title><style>
- @page{size:A4;margin:16mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#17243a;margin:0;font-size:12px}.head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #173a61;padding-bottom:14px;margin-bottom:18px}.logo{max-width:150px;max-height:70px;object-fit:contain}.company{text-align:right}.company h1{margin:0;color:#173a61;font-size:22px}.doc-title{display:flex;justify-content:space-between;align-items:end;margin:18px 0}.doc-title h2{margin:0;font-size:20px}.folio{font-weight:bold;color:#b88908}.meta{background:#f4f6f9;padding:12px;border-radius:9px;margin-bottom:15px;line-height:1.6}table{width:100%;border-collapse:collapse;margin:12px 0 18px}th{background:#173a61;color:#fff;text-align:left;padding:9px}td{padding:9px;border-bottom:1px solid #dfe4eb}td.num,th.num{text-align:right}.totals{margin-left:auto;width:300px}.totals div{display:flex;justify-content:space-between;padding:6px 0}.totals .grand{font-size:16px;font-weight:bold;border-top:2px solid #173a61;padding-top:9px}.note{margin-top:28px;padding:12px;background:#fff8df;border-left:4px solid #d7aa25}.foot{margin-top:35px;border-top:1px solid #dfe4eb;padding-top:10px;color:#6c7788;text-align:center;font-size:10px}.actions{position:fixed;right:18px;bottom:18px}@media print{.actions{display:none}}</style></head><body>
- <div class="head"><div>${logo?`<img class="logo" src="${logo}">`:""}</div><div class="company"><h1>${escDoc(c.nombre||"AuraERP")}</h1>${c.whatsapp?`<div>WhatsApp: ${escDoc(c.whatsapp)}</div>`:""}</div></div>
- <div class="doc-title"><h2>${escDoc(title)}</h2><div class="folio">${escDoc(folio||"")}</div></div>${meta?`<div class="meta">${meta}</div>`:""}${body}
- <div class="foot">Documento generado por AuraERP · ${new Date().toLocaleString("es-MX")}</div><button class="actions" onclick="window.print()">Imprimir / Guardar PDF</button></body></html>`);w.document.close();
+ let c=await companyForDoc(),logo=c.logo?driveImage(c.logo):"",company=escDoc(c.nombre||"AuraERP"),w=window.open("","_blank","width=1050,height=850");
+ if(!w)return alert("Permite ventanas emergentes para generar el documento.");
+ const today=new Date().toLocaleDateString("es-MX",{day:"2-digit",month:"long",year:"numeric"});
+ w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${escDoc(title)} ${escDoc(folio)}</title><style>
+ @page{size:A4;margin:13mm 14mm 15mm}*{box-sizing:border-box}html,body{margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;color:#14253d;background:#eef2f6;font-size:11px;line-height:1.45}.sheet{max-width:210mm;min-height:270mm;margin:18px auto;background:#fff;padding:0 0 18px;box-shadow:0 12px 40px rgba(17,38,66,.12)}
+ .brandbar{height:9px;background:#173a61}.header{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;padding:22px 26px 17px;border-bottom:1px solid #e2e8f0}.brandbox{display:flex;align-items:center;gap:15px}.logo{max-width:145px;max-height:62px;object-fit:contain}.company-name{font-size:22px;font-weight:900;color:#173a61;letter-spacing:-.02em}.company-sub{color:#718096;font-size:10px;margin-top:3px}.header-info{text-align:right;color:#64748b;font-size:10px}.header-info strong{display:block;color:#173a61;font-size:11px}
+ .dochead{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:end;padding:22px 26px 14px}.eyebrow{font-size:9px;text-transform:uppercase;letter-spacing:.14em;color:#b78a12;font-weight:900}.dochead h1{font-size:25px;line-height:1.1;margin:5px 0 0;color:#12243e}.folio-box{min-width:150px;text-align:right}.folio-label{font-size:9px;color:#7a8798;text-transform:uppercase;letter-spacing:.1em}.folio-value{font-size:17px;font-weight:900;color:#b78a12;margin-top:2px}
+ .content{padding:0 26px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;background:#f6f8fb;border:1px solid #e2e8f0;border-radius:12px;padding:13px 15px;margin:0 0 18px;line-height:1.6}.meta strong{color:#173a61}.section-title{font-size:11px;font-weight:900;color:#173a61;text-transform:uppercase;letter-spacing:.06em;margin:18px 0 8px}
+ table{width:100%;border-collapse:separate;border-spacing:0;margin:10px 0 18px;border:1px solid #dfe5ed;border-radius:10px;overflow:hidden}thead{display:table-header-group}th{background:#173a61;color:#fff;text-align:left;padding:10px 9px;font-size:9px;text-transform:uppercase;letter-spacing:.04em}td{padding:10px 9px;border-bottom:1px solid #e6ebf1;vertical-align:middle}tbody tr:last-child td{border-bottom:0}tbody tr:nth-child(even){background:#fafbfd}td.num,th.num{text-align:right}
+ .totals{margin:8px 0 0 auto;width:315px;background:#f7f9fc;border:1px solid #e1e7ef;border-radius:11px;padding:10px 14px}.totals div{display:flex;justify-content:space-between;gap:18px;padding:5px 0}.totals .grand{font-size:15px;font-weight:900;color:#173a61;border-top:2px solid #d8b139;margin-top:5px;padding-top:9px}
+ .note{margin-top:18px;padding:12px 14px;background:#fff9e8;border:1px solid #f0df9d;border-left:4px solid #d8aa22;border-radius:8px;color:#4b5563}.signature-area{display:grid;grid-template-columns:1fr 1fr;gap:70px;margin:46px 30px 10px}.signature{text-align:center;border-top:1px solid #9aa6b4;padding-top:7px;color:#64748b;font-size:9px}
+ .footer{display:flex;justify-content:space-between;align-items:center;gap:15px;margin:34px 26px 0;padding-top:11px;border-top:1px solid #e2e8f0;color:#7a8798;font-size:8.5px}.footer strong{color:#173a61}.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#edf3f9;color:#173a61;font-weight:800}
+ .actions{position:fixed;right:22px;bottom:22px;display:flex;gap:8px}.actions button{border:0;border-radius:10px;padding:11px 15px;font-weight:800;cursor:pointer}.print{background:#173a61;color:#fff}.close{background:#fff;color:#173a61;border:1px solid #dbe2ea!important}
+ @media print{body{background:#fff}.sheet{margin:0;box-shadow:none;min-height:auto}.actions{display:none}.brandbar{-webkit-print-color-adjust:exact;print-color-adjust:exact}th{-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#173a61!important;color:#fff!important}.note{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+ @media(max-width:700px){.sheet{margin:0;min-height:100vh}.header,.dochead{grid-template-columns:1fr}.header-info,.folio-box{text-align:left}.content,.header,.dochead{padding-left:17px;padding-right:17px}.meta{grid-template-columns:1fr}.totals{width:100%}.signature-area{grid-template-columns:1fr;gap:40px}}
+ </style></head><body><main class="sheet"><div class="brandbar"></div><header class="header"><div class="brandbox">${logo?`<img class="logo" src="${logo}">`:""}<div><div class="company-name">${company}</div><div class="company-sub">Documento comercial</div></div></div><div class="header-info"><strong>${c.whatsapp?`WhatsApp ${escDoc(c.whatsapp)}`:"Documento oficial"}</strong><span>Emitido: ${today}</span></div></header>
+ <section class="dochead"><div><div class="eyebrow">AuraERP · Documento</div><h1>${escDoc(title)}</h1></div>${folio?`<div class="folio-box"><div class="folio-label">Folio</div><div class="folio-value">${escDoc(folio)}</div></div>`:""}</section>
+ <div class="content">${meta?`<div class="meta">${meta}</div>`:""}${body}</div>
+ <div class="signature-area"><div class="signature">Elaboró / autorizó</div><div class="signature">Recibió / cliente</div></div>
+ <footer class="footer"><span><strong>${company}</strong> · Documento generado por AuraERP</span><span>© ${new Date().getFullYear()} · Página impresa</span></footer></main>
+ <div class="actions"><button class="close" onclick="window.close()">Cerrar</button><button class="print" onclick="window.print()">Imprimir / Guardar PDF</button></div></body></html>`);
+ w.document.close();
 }
 function itemsTable(items=[]){return `<table><thead><tr><th>Producto</th><th>Modalidad</th><th class="num">Cantidad</th><th class="num">P. Unitario</th><th class="num">Subtotal</th></tr></thead><tbody>${items.map(x=>`<tr><td>${escDoc(x.nombre)}</td><td>${escDoc(x.modalidad||"")}</td><td class="num">${Number(x.cantidad||0)}</td><td class="num">${docMoney(x.precioUnitario)}</td><td class="num">${docMoney(x.subtotal)}</td></tr>`).join("")}</tbody></table>`}
 async function generateSaleDoc(){let v=docSales.find(x=>x.id===$("#docSaleSelect").value);if(!v)return alert("Selecciona una venta.");let body=itemsTable(v.productos)+`<div class="totals"><div><span>Total</span><strong>${docMoney(v.total)}</strong></div><div><span>Pagado</span><strong>${docMoney(v.totalPagado)}</strong></div><div class="grand"><span>Saldo</span><strong>${docMoney(v.saldo)}</strong></div></div><div class="note">Estado: <strong>${escDoc(v.estado)}</strong> · Tipo: ${escDoc(v.tipo)}</div>`;await printProfessional("Comprobante de venta",v.folio,body,`Cliente: <strong>${escDoc(v.clienteNombre)}</strong><br>Teléfono: ${escDoc(v.telefono)}<br>Fecha: ${docDate(v.createdAt)}`)}
@@ -654,7 +670,7 @@ setTimeout(loadFaqConfig,1300);
 
 // v1.7.13 mobile sidebar
 document.addEventListener("click",e=>{
- const menu=e.target.closest("#mobileMenu,.mobile-menu-btn,[data-mobile-menu]");
+ const menu=e.target.closest("#menuBtn,.menuBtn,#mobileMenu,.mobile-menu-btn,[data-mobile-menu]");
  if(menu){document.querySelector(".sidebar")?.classList.toggle("mobile-open");return}
  if(e.target.closest("#nav [data-module]")&&window.innerWidth<=800)document.querySelector(".sidebar")?.classList.remove("mobile-open");
 });
@@ -700,3 +716,24 @@ function renderAutomations(){
 const refreshAuto=$("#refreshAutomations");if(refreshAuto)refreshAuto.onclick=loadAutomations;
 const saveAuto=$("#saveAutomationRules");if(saveAuto)saveAuto.onclick=()=>{let map={orders:"autoOrders",debt:"autoDebt",lowStock:"autoLowStock",outStock:"autoOutStock",crm:"autoCRM",inactive:"autoInactive",backup:"autoBackup",launch:"autoLaunch"},r={};Object.entries(map).forEach(([k,id])=>r[k]=$("#"+id)?.checked!==false);localStorage.setItem("aura-automation-rules",JSON.stringify(r));$("#automationMsg").textContent="Reglas guardadas.";renderAutomations()};
 setTimeout(loadAutomations,1800);
+
+// v1.9.1 - definitive mobile navigation
+(function(){
+ function sidebar(){return document.querySelector(".sidebar")}
+ function ensureOverlay(){
+   let o=document.getElementById("mobileNavOverlay");
+   if(!o){o=document.createElement("div");o.id="mobileNavOverlay";o.className="mobile-nav-overlay";document.body.appendChild(o)}
+   return o;
+ }
+ function openNav(){let s=sidebar(),o=ensureOverlay();if(!s)return;s.classList.add("mobile-open");document.body.classList.add("mobile-nav-open");o.classList.add("show")}
+ function closeNav(){let s=sidebar(),o=document.getElementById("mobileNavOverlay");s?.classList.remove("mobile-open");document.body.classList.remove("mobile-nav-open");o?.classList.remove("show")}
+ function toggleNav(){sidebar()?.classList.contains("mobile-open")?closeNav():openNav()}
+ document.addEventListener("click",e=>{
+   let menu=e.target.closest("#menuBtn,.menuBtn,#mobileMenu,.mobile-menu-btn,[data-mobile-menu]");
+   if(menu){e.preventDefault();e.stopPropagation();toggleNav();return}
+   if(e.target.closest("#mobileNavOverlay")){closeNav();return}
+   if(window.innerWidth<=800 && e.target.closest(".sidebar [data-module]"))setTimeout(closeNav,60);
+ });
+ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeNav()});
+ window.addEventListener("resize",()=>{if(window.innerWidth>800)closeNav()});
+})();
