@@ -3,7 +3,9 @@ import {db,doc,getDoc,addDoc,collection,getDocs,updateDoc,serverTimestamp} from 
 const $=s=>document.querySelector(s);
 let products=[],cats=[],business={},heroCandidates=[],heroIndex=0,heroTimer=null;
 let selectedCategory="",specialFilter="";
-let cart=JSON.parse(localStorage.getItem("aura-cart")||"[]");
+let cart=[];try{cart=JSON.parse(localStorage.getItem("aura-cart")||"[]");if(!Array.isArray(cart))cart=[]}catch(e){cart=[];localStorage.removeItem("aura-cart")}
+function normalizeCart(){cart=cart.filter(x=>x&&x.id).map(x=>({...x,qty:Math.max(x.mode==="mayoreo"?3:1,Number(x.qty||1))}))}
+normalizeCart();
 
 const money=n=>new Intl.NumberFormat("es-MX",{style:"currency",currency:business.moneda||"MXN"}).format(Number(n||0));
 const drive=v=>{if(!v)return"";let m=v.match(/\/d\/([^/]+)/)||v.match(/[?&]id=([^&]+)/);return m?`https://drive.google.com/thumbnail?id=${m[1]}&sz=w1200`:v};

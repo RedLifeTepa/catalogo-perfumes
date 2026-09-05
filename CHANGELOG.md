@@ -1,18 +1,15 @@
-# AuraERP v1.8.0 - Automatizaciones y Centro de Pendientes
+# AuraERP v1.9.0 - QA / Hardening
 
-- Nuevo módulo ⚡ Automatizaciones.
-- Centro `Qué atender hoy`.
-- Pedidos nuevos.
-- Cobranza pendiente.
-- Stock bajo.
-- Productos agotados.
-- Seguimientos CRM vencidos.
-- Clientes inactivos.
-- Respaldo recomendado.
-- Próximos lanzamientos.
-- Tarjetas accionables: clic abre el módulo correspondiente.
-- KPIs de pendientes totales, urgentes, comerciales y operativos.
-- Reglas activables/desactivables.
-- Revisión manual con `Revisar ahora`.
-- Se integra con la sincronización global.
-- No agrega nuevas colecciones Firestore.
+- Auditoría estática integral de la rama v1.8.0.
+- Limpieza de runtimes IA heredados.
+- Validación de sintaxis JavaScript.
+- Validación de archivos críticos.
+- Manejo global de errores.
+- Detección online/offline.
+- Refresco al regresar a la pestaña.
+- Carrito resistente a almacenamiento local corrupto.
+- Refuerzo de mínimo mayoreo = 3.
+- Encabezados de seguridad para hosting.
+- Cache/versionado unificado v1.9.0.
+- Checklist funcional completo para Release Candidate.
+- No se agregan módulos funcionales nuevos.

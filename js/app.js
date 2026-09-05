@@ -1,5 +1,18 @@
 import {auth,db,onAuthStateChanged,signInWithEmailAndPassword,signOut,sendPasswordResetEmail,doc,getDoc,setDoc,addDoc,collection,serverTimestamp,getDocs,updateDoc,query,where,limit,runTransaction} from "./firebase-config.js";
 
+// v1.9.0 QA/Hardening
+window.addEventListener("error",e=>console.error("[AuraERP runtime]",e.error||e.message));
+window.addEventListener("unhandledrejection",e=>console.error("[AuraERP promise]",e.reason));
+window.addEventListener("online",()=>{const s=document.querySelector("#syncStatus");if(s){s.textContent="Conectado";s.className="sync-status ok"}});
+window.addEventListener("offline",()=>{const s=document.querySelector("#syncStatus");if(s){s.textContent="Sin conexión";s.className="sync-status error"}});
+
+const auraLocks=new Set();
+async function withAuraLock(key,button,fn){
+ if(auraLocks.has(key))return;
+ auraLocks.add(key);const old=button?.disabled;if(button)button.disabled=true;
+ try{return await fn()}finally{auraLocks.delete(key);if(button)button.disabled=!!old}
+}
+
 // v1.7.7 SIMPLE ASSISTANT - bound before the rest of AuraERP initializes.
 const SIMPLE_AI_QUESTIONS=["¿Cuánto vendí este mes?","¿Cuál es mi producto más vendido?","¿Cuál tiene mayor utilidad?","¿Qué producto tiene muchas vistas pero pocas ventas?","¿Qué clientes me deben?","¿Quiénes son mis mejores clientes?","¿Qué productos debo reabastecer?","¿Qué productos están agotados?","¿Cuánto dinero tengo por cobrar?","¿Cuál es mi ticket promedio?","¿Qué clientes llevan mucho tiempo sin comprar?","¿Qué promociones me convendría realizar?","¿Cómo se compara este mes contra el anterior?","¿Cuáles son mis productos con menor movimiento?","¿Qué tareas CRM están vencidas?","¿Qué pedidos siguen sin convertirse en venta?","¿Cuánto margen estoy obteniendo?","¿Qué debería revisar hoy?","¿Dónde estoy perdiendo oportunidades?","Dame un resumen ejecutivo de mi negocio."];
 let simpleAI={loaded:false,sales:[],orders:[],products:[],clients:[],payments:[],tasks:[]};
