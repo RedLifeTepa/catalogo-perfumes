@@ -1,8 +1,18 @@
-# AuraERP v1.7.14 - Footer Links Fix
+# AuraERP v1.8.0 - Automatizaciones y Centro de Pendientes
 
-- Corrección puntual de los tres enlaces del footer.
-- Preguntas frecuentes -> ./preguntas.html
-- Términos y condiciones -> ./terminos.html
-- Política de privacidad -> ./privacidad.html
-- Compatible con GitHub Pages en subcarpeta /catalogo-perfumes/.
-- Se actualiza caché a v1.7.14.
+- Nuevo módulo ⚡ Automatizaciones.
+- Centro `Qué atender hoy`.
+- Pedidos nuevos.
+- Cobranza pendiente.
+- Stock bajo.
+- Productos agotados.
+- Seguimientos CRM vencidos.
+- Clientes inactivos.
+- Respaldo recomendado.
+- Próximos lanzamientos.
+- Tarjetas accionables: clic abre el módulo correspondiente.
+- KPIs de pendientes totales, urgentes, comerciales y operativos.
+- Reglas activables/desactivables.
+- Revisión manual con `Revisar ahora`.
+- Se integra con la sincronización global.
+- No agrega nuevas colecciones Firestore.

@@ -297,7 +297,7 @@ async function refreshAllData(silent=false){
   ["pedidos",loadOrders],["clientes",loadCRMAdvanced],["ventas",loadSales],
   ["cobranza",loadCollections],["dashboard",loadDashboardReal],["reportes",async()=>{}],
   ["documentos",loadDocumentCenter],["inteligencia",loadIntelligence],["usuarios",loadUsers],
-  ["respaldos",loadBackupsAdvanced],["notificaciones",loadNotifications],["bitácora",loadAudit]
+  ["respaldos",loadBackupsAdvanced],["automatizaciones",loadAutomations],["notificaciones",loadNotifications],["bitácora",loadAudit]
  ];
  const results=await Promise.allSettled(jobs.map(([,fn])=>fn()));
  let errors=[];results.forEach((r,i)=>{if(r.status==="rejected"){errors.push(jobs[i][0]);console.error("Refresh "+jobs[i][0],r.reason)}});
@@ -645,3 +645,45 @@ document.addEventListener("click",e=>{
  if(menu){document.querySelector(".sidebar")?.classList.toggle("mobile-open");return}
  if(e.target.closest("#nav [data-module]")&&window.innerWidth<=800)document.querySelector(".sidebar")?.classList.remove("mobile-open");
 });
+
+// AuraERP v1.8.0 - Automation Center
+let automationData={orders:[],sales:[],products:[],clients:[],tasks:[],backups:[]};
+const AUTO_KEYS=["orders","debt","lowStock","outStock","crm","inactive","backup","launch"];
+function automationRules(){let raw=localStorage.getItem("aura-automation-rules");if(!raw)return Object.fromEntries(AUTO_KEYS.map(k=>[k,true]));try{return {...Object.fromEntries(AUTO_KEYS.map(k=>[k,true])),...JSON.parse(raw)}}catch(e){return Object.fromEntries(AUTO_KEYS.map(k=>[k,true]))}}
+function autoDate(v){return v?.toDate?v.toDate():v?.seconds?new Date(v.seconds*1000):v?new Date(v):null}
+function autoDays(v){let d=autoDate(v);return d?Math.floor((Date.now()-d.getTime())/86400000):9999}
+async function loadAutomations(){
+ try{
+  let defs=[["orders","pedidos"],["sales","ventas"],["products","productos"],["clients","clientes"],["tasks","tareasCRM"],["backups","respaldos"]];
+  let rs=await Promise.allSettled(defs.map(x=>getDocs(collection(db,x[1]))));
+  rs.forEach((r,i)=>{let k=defs[i][0];automationData[k]=r.status==="fulfilled"?r.value.docs.map(d=>({id:d.id,...d.data()})):[]});
+  renderAutomations();
+ }catch(e){console.error("Automatizaciones",e)}
+}
+function renderAutomations(){
+ let r=automationRules(),items=[];
+ let newOrders=automationData.orders.filter(x=>x.estado==="nuevo");
+ if(r.orders&&newOrders.length)items.push({icon:"🛍️",title:"Pedidos nuevos",text:"Solicitudes pendientes de revisar y convertir.",count:newOrders.length,module:"pedidos",level:"warn",kind:"commercial"});
+ let debt=automationData.sales.filter(x=>Number(x.saldo||0)>0),debtTotal=debt.reduce((s,x)=>s+Number(x.saldo||0),0);
+ if(r.debt&&debt.length)items.push({icon:"💳",title:"Cobranza pendiente",text:`${mx(debtTotal)} pendiente de cobro.`,count:debt.length,module:"cobranza",level:"urgent",kind:"commercial"});
+ let low=automationData.products.filter(p=>p.activo!==false&&Number(p.stock||0)>0&&Number(p.stock||0)<=Number(p.stockMinimo||0));
+ if(r.lowStock&&low.length)items.push({icon:"📦",title:"Stock bajo",text:"Productos que alcanzaron su mínimo.",count:low.length,module:"inventario",level:"warn",kind:"operational"});
+ let out=automationData.products.filter(p=>p.activo!==false&&Number(p.stock||0)<=0);
+ if(r.outStock&&out.length)items.push({icon:"⛔",title:"Productos agotados",text:"Productos activos sin existencias.",count:out.length,module:"inventario",level:"urgent",kind:"operational"});
+ let overdue=automationData.tasks.filter(t=>t.estado!=="completada"&&autoDate(t.fechaProgramada)&&autoDate(t.fechaProgramada)<new Date());
+ if(r.crm&&overdue.length)items.push({icon:"⏰",title:"Seguimientos vencidos",text:"Tareas CRM que requieren atención.",count:overdue.length,module:"clientes",level:"urgent",kind:"commercial"});
+ let inactive=automationData.clients.filter(c=>autoDays(c.ultimaInteraccion||c.ultimaCompra||c.createdAt)>60);
+ if(r.inactive&&inactive.length)items.push({icon:"👥",title:"Clientes inactivos",text:"Más de 60 días sin compra o interacción.",count:inactive.length,module:"clientes",level:"info",kind:"commercial"});
+ let last=[...automationData.backups].sort((a,b)=>(autoDate(b.createdAt)||0)-(autoDate(a.createdAt)||0))[0],lastDays=last?autoDays(last.createdAt):9999;
+ if(r.backup&&lastDays>7)items.push({icon:"💾",title:"Respaldo recomendado",text:last?`Último respaldo hace ${lastDays} días.`:"No hay respaldos registrados.",count:1,module:"respaldos",level:"warn",kind:"operational"});
+ let launch=automationData.products.filter(p=>p.activo!==false&&p.proximoLanzamiento===true);
+ if(r.launch&&launch.length)items.push({icon:"🚀",title:"Próximos lanzamientos",text:"Productos marcados para lanzamiento.",count:launch.length,module:"productos",level:"info",kind:"commercial"});
+ if(!items.length)items.push({icon:"✓",title:"Todo al día",text:"No hay pendientes según las reglas activas.",count:0,module:"dashboard",level:"good",kind:""});
+ $("#autoTotal").textContent=items.reduce((s,x)=>s+(x.count||0),0);$("#autoUrgent").textContent=items.filter(x=>x.level==="urgent").reduce((s,x)=>s+x.count,0);$("#autoCommercial").textContent=items.filter(x=>x.kind==="commercial").reduce((s,x)=>s+x.count,0);$("#autoOperational").textContent=items.filter(x=>x.kind==="operational").reduce((s,x)=>s+x.count,0);
+ $("#automationTasks").innerHTML=items.map(x=>`<button class="auto-task ${x.level}" data-auto-module="${x.module}"><span class="auto-icon">${x.icon}</span><span class="auto-main"><strong>${x.title}</strong><small>${x.text}</small></span><span class="auto-count">${x.count||""}</span></button>`).join("");
+ $$(".auto-task").forEach(b=>b.onclick=()=>document.querySelector(`[data-module="${b.dataset.autoModule}"]`)?.click());
+ let rr=automationRules(),map={autoOrders:"orders",autoDebt:"debt",autoLowStock:"lowStock",autoOutStock:"outStock",autoCRM:"crm",autoInactive:"inactive",autoBackup:"backup",autoLaunch:"launch"};Object.entries(map).forEach(([id,k])=>{let e=$("#"+id);if(e)e.checked=rr[k]!==false});
+}
+const refreshAuto=$("#refreshAutomations");if(refreshAuto)refreshAuto.onclick=loadAutomations;
+const saveAuto=$("#saveAutomationRules");if(saveAuto)saveAuto.onclick=()=>{let map={orders:"autoOrders",debt:"autoDebt",lowStock:"autoLowStock",outStock:"autoOutStock",crm:"autoCRM",inactive:"autoInactive",backup:"autoBackup",launch:"autoLaunch"},r={};Object.entries(map).forEach(([k,id])=>r[k]=$("#"+id)?.checked!==false);localStorage.setItem("aura-automation-rules",JSON.stringify(r));$("#automationMsg").textContent="Reglas guardadas.";renderAutomations()};
+setTimeout(loadAutomations,1800);
