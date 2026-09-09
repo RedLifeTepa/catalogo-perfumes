@@ -751,4 +751,24 @@ $("#newOperationBtn").onclick=()=>{opCart=[];$("#operationModal").classList.add(
 function toggleOpClientForm(show){$("#opClientForm").classList.toggle("hidden",!show);if(show)setTimeout(()=>$("#opClientName").focus(),80)}
 function renderOpClientSelector(){let c=$("#opClient"),current=c.value;c.innerHTML='<option value="mostrador">👤 Venta de mostrador</option>'+opClients.slice().sort((a,b)=>(a.nombre||"").localeCompare(b.nombre||"")).map(x=>`<option value="${x.id}">${x.nombre||x.telefono} · ${x.telefono||""}</option>`).join("");if([...c.options].some(o=>o.value===current))c.value=current}
 async function saveOpClient(){let name=$("#opClientName").value.trim(),phone=$("#opClientPhone").value.trim(),email=$("#opClientEmail").value.trim(),notes=$("#opClientNotes").value.trim(),msg=$("#opClientMsg");if(!name)return msg.textContent="Escribe el nombre.";if(!phone)return msg.textContent="Escribe el teléfono.";try{$("#opSaveClient").disabled=true;let existing=opClients.find(c=>(c.telefono||"").replace(/\D/g,"")===phone.replace(/\D/g,""));if(existing){renderOpClientSelector();$("#opClient").value=existing.id;msg.textContent="Cliente existente seleccionado.";return setTimeout(()=>toggleOpClientForm(false),600)}let ref=await addDoc(collection(db,"clientes"),{nombre:name,telefono:phone,email,notas:notes,etapa:"nuevo",activo:true,totalComprado:0,totalPendiente:0,origen:"venta_manual",createdAt:serverTimestamp(),updatedAt:serverTimestamp(),ultimaInteraccion:serverTimestamp()});opClients.push({id:ref.id,nombre:name,telefono:phone,email,notas:notes});renderOpClientSelector();$("#opClient").value=ref.id;await log(`Creó cliente ${name} desde Nueva operación`);msg.textContent="✓ Cliente creado y seleccionado.";setTimeout(()=>toggleOpClientForm(false),600)}catch(e){console.error(e);msg.textContent="No fue posible guardar."}finally{$("#opSaveClient").disabled=false}}
-$("#opNewClient").onclick=()=>toggleOpClientForm(true);$("#opCancelClient").onclick=()=>toggleOpClientForm(false);$("#opSaveClient").onclick=saveOpClient;
+
+
+// v1.9.4.1 - robust Nuevo Cliente open/close/save
+document.addEventListener("click",e=>{
+ const open=e.target.closest("#opNewClient");
+ if(open){
+   e.preventDefault();e.stopPropagation();
+   const form=document.querySelector("#opClientForm");
+   if(form){form.classList.remove("hidden");form.setAttribute("aria-hidden","false");setTimeout(()=>document.querySelector("#opClientName")?.focus(),60)}
+   return;
+ }
+ const close=e.target.closest("#opCancelClient");
+ if(close){
+   e.preventDefault();e.stopPropagation();
+   const form=document.querySelector("#opClientForm");
+   if(form){form.classList.add("hidden");form.setAttribute("aria-hidden","true")}
+   return;
+ }
+ const save=e.target.closest("#opSaveClient");
+ if(save){e.preventDefault();e.stopPropagation();saveOpClient();return}
+});
