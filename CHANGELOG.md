@@ -1,16 +1,12 @@
-# AuraERP v1.9.2 - Documentos Premium
+# AuraERP v1.9.3 — Nueva Operación POS
 
-- Rediseño completo de documentos imprimibles.
-- Encabezado corporativo con logotipo y nombre de empresa.
-- Barra institucional.
-- Folio destacado.
-- Fecha de emisión.
-- Bloques de datos con mejor jerarquía.
-- Tablas profesionales con encabezados corporativos y filas alternadas.
-- Totales en bloque ejecutivo.
-- Notas destacadas.
-- Áreas de firma / recepción.
-- Pie de página corporativo con año automático.
-- Diseño A4 optimizado para Guardar como PDF.
-- Responsive para vista previa móvil.
-- Aplica a Venta, Pedido, Estado de cuenta y Kardex.
+- Nueva operación desde panel.
+- Buscador instantáneo, categorías, frecuentes, recientes y stock.
+- Filas compactas con imagen, SKU, stock, menudeo/mayoreo.
+- Mayoreo mínimo 3.
+- Carrito inferior móvil.
+- Pedido manual, venta pagada y crédito con abono.
+- Venta de mostrador.
+- Origen manual.
+- Descuento de inventario y Kardex.
+- Abono inicial en Cobranza.
