@@ -1,7 +1,5 @@
-# AuraERP v1.9.5 Client Review
+# AuraERP v1.9.5.1
 
-- Mayoreo automático por total de unidades, mínimo configurable (3).
-- Cintilla animada configurable.
-- Opiniones con nombre/comentario/estrellas y carrusel.
-- Página Quiénes somos.
-- QA/refuerzo de movimiento de inventario.
+- Corrección puntual: Quiénes somos visible junto al carrito.
+- Enlace a quienes-somos.html.
+- Responsive: texto en escritorio, icono en teléfonos pequeños.
