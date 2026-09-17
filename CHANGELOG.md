@@ -1,5 +1,8 @@
-# AuraERP v1.9.5.1
+# AuraERP v1.9.5.2
 
-- Corrección puntual: Quiénes somos visible junto al carrito.
-- Enlace a quienes-somos.html.
-- Responsive: texto en escritorio, icono en teléfonos pequeños.
+- Corrección puntual de la cintilla de mayoreo.
+- Ocupa el 100% del ancho real de la pantalla en PC.
+- Mensaje centrado durante el recorrido.
+- Animación continua de extremo a extremo.
+- Mantiene comportamiento responsive en móvil.
+- No se modifica ninguna lógica comercial.
