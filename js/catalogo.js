@@ -132,20 +132,15 @@ async function showProduct(id){
 }
 
 function addCart(id,mode="menudeo"){
- const p=products.find(x=>x.id===id);if(!p)return;
- const isWholesale=mode==="mayoreo"&&Number(p.precioMayoreo||0)>0;
- const unit=isWholesale?Number(p.precioMayoreo):effectivePrice(p);
- let x=cart.find(i=>i.id===id&&i.mode===mode);
- if(x)x.qty++;else cart.push({id:p.id,nombre:p.nombre,imagen:img(p),mode,qty:isWholesale?3:1,minQty:isWholesale?3:1,precio:unit});
- saveCart();$("#cartDrawer").classList.add("open");
+ const p=products.find(x=>x.id===id);if(!p)return;let x=cart.find(i=>i.id===id);if(x)x.qty++;else cart.push({id:p.id,nombre:p.nombre,imagen:img(p),mode:"menudeo",qty:1,minQty:1,precio:effectivePrice(p)});auraApplyWholesale();saveCart();$("#cartDrawer").classList.add("open");
 }
 function saveCart(){localStorage.setItem("aura-cart",JSON.stringify(cart));renderCart()}
 function renderCart(){
- cart.forEach(x=>{if(x.mode==="mayoreo"&&x.qty<3)x.qty=3});
+ auraApplyWholesale();
  const n=cart.reduce((s,x)=>s+x.qty,0),t=cart.reduce((s,x)=>s+x.qty*x.precio,0);
  $("#cartCount").textContent=n;$("#cartTotal").textContent=money(t);
  $("#cartItems").innerHTML=cart.map((x,i)=>`<div class="cart-line"><img src="${x.imagen}"><div><h4>${x.nombre}</h4><small>${x.mode==="mayoreo"?`Mayoreo · ${money(x.precio)} c/u · mínimo 3`:`Menudeo · ${money(x.precio)}`}</small><div class="qty"><button data-op="minus" data-i="${i}">−</button><span>${x.qty}</span><button data-op="plus" data-i="${i}">+</button></div></div><button class="remove" data-op="remove" data-i="${i}">✕</button></div>`).join("")||'<p class="muted">Tu carrito está vacío.</p>';
- $("#cartItems").onclick=e=>{let b=e.target.closest("[data-op]");if(!b)return;let i=Number(b.dataset.i);if(b.dataset.op==="plus")cart[i].qty++;if(b.dataset.op==="minus"){let min=cart[i].mode==="mayoreo"?3:1;cart[i].qty=Math.max(min,cart[i].qty-1)}if(b.dataset.op==="remove")cart.splice(i,1);saveCart()};
+ $("#cartItems").onclick=e=>{let b=e.target.closest("[data-op]");if(!b)return;let i=Number(b.dataset.i);if(b.dataset.op==="plus")cart[i].qty++;if(b.dataset.op==="minus"){let min=1;cart[i].qty=Math.max(min,cart[i].qty-1);auraApplyWholesale()}if(b.dataset.op==="remove")cart.splice(i,1);saveCart()};
 }
 
 function renderExtras(){
@@ -189,3 +184,9 @@ $("#checkoutForm").onsubmit=async e=>{
 };
 if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js");
 init();
+
+function auraWholesaleMin(){return Math.max(1,Number(business.minimoMayoreo||3))}
+function auraCartUnits(){return cart.reduce((n,x)=>n+Number(x.qty||0),0)}
+function auraApplyWholesale(){let active=auraCartUnits()>=auraWholesaleMin();cart.forEach(x=>{let p=products.find(z=>z.id===x.id);if(p){x.mode=active?"mayoreo":"menudeo";x.precio=active&&Number(p.precioMayoreo||0)>0?Number(p.precioMayoreo):effectivePrice(p);x.minQty=1}})}
+function auraStoreContent(){let min=auraWholesaleMin(),r=document.querySelector("#wholesaleRibbon"),t=document.querySelector("#wholesaleRibbonText");if(r)r.style.display=business.cintillaMayoreo===false?"none":"block";if(t)t.textContent="✨ "+(business.textoCintilla||`¡Compra ${min} o más productos y obtén automáticamente precio de mayoreo!`)+" ✨";let rows=business.opinionesClientes||[],track=document.querySelector("#reviewsTrack"),sec=document.querySelector("#reviewsSection");if(sec)sec.style.display=rows.length?"block":"none";if(track&&rows.length){let cards=rows.map(x=>`<article class="review-card"><div class="review-stars">${"★".repeat(Math.max(1,Math.min(5,Number(x.estrellas||5))))}</div><p>“${x.comentario||""}”</p><strong>${x.nombre||"Cliente"}</strong></article>`).join("");track.innerHTML=cards+cards}}
+setTimeout(auraStoreContent,1500);

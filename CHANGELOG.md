@@ -1,10 +1,7 @@
-# AuraERP v1.9.4.1 - Nuevo Cliente Modal Fix
+# AuraERP v1.9.5 Client Review
 
-- Corregido botón + Cliente.
-- Corregido botón X para cerrar.
-- Eventos delegados para que abrir/cerrar funcione siempre.
-- El formulario inicia cerrado.
-- Al abrir enfoca Nombre.
-- Cerrar no elimina la operación actual.
-- Guardar cliente conserva la lógica existente.
-- Cache bust v1.9.4.1.
+- Mayoreo automático por total de unidades, mínimo configurable (3).
+- Cintilla animada configurable.
+- Opiniones con nombre/comentario/estrellas y carrusel.
+- Página Quiénes somos.
+- QA/refuerzo de movimiento de inventario.
