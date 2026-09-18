@@ -206,3 +206,8 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .altosfilm-credit-row .altosfilm-credit a{
  display:inline!important;
 }
+
+/* v1.9.5.8 company logo on all public pages */
+.catalog-company-logo{display:none;max-width:135px;max-height:58px;object-fit:contain;margin-right:10px}
+.catalog-company-logo.has-logo{display:block!important}
+@media(max-width:700px){.catalog-company-logo{max-width:92px;max-height:42px;margin-right:6px}}

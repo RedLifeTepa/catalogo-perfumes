@@ -190,3 +190,24 @@ function auraCartUnits(){return cart.reduce((n,x)=>n+Number(x.qty||0),0)}
 function auraApplyWholesale(){let active=auraCartUnits()>=auraWholesaleMin();cart.forEach(x=>{let p=products.find(z=>z.id===x.id);if(p){x.mode=active?"mayoreo":"menudeo";x.precio=active&&Number(p.precioMayoreo||0)>0?Number(p.precioMayoreo):effectivePrice(p);x.minQty=1}})}
 function auraStoreContent(){let min=auraWholesaleMin(),r=document.querySelector("#wholesaleRibbon"),t=document.querySelector("#wholesaleRibbonText");if(r)r.style.display=business.cintillaMayoreo===false?"none":"block";if(t)t.textContent="✨ "+(business.textoCintilla||`¡Compra ${min} o más productos y obtén automáticamente precio de mayoreo!`)+" ✨";let rows=business.opinionesClientes||[],track=document.querySelector("#reviewsTrack"),sec=document.querySelector("#reviewsSection");if(sec)sec.style.display=rows.length?"block":"none";if(track&&rows.length){let cards=rows.map(x=>`<article class="review-card"><div class="review-stars">${"★".repeat(Math.max(1,Math.min(5,Number(x.estrellas||5))))}</div><p>“${x.comentario||""}”</p><strong>${x.nombre||"Cliente"}</strong></article>`).join("");track.innerHTML=cards+cards}}
 setTimeout(auraStoreContent,1500);
+
+function syncPublicCompanyLogo(){
+ const logo=business.logo||business.logoUrl||business.logotipo||"";
+ document.querySelectorAll("[data-company-logo]").forEach(el=>{
+   if(logo){el.src=logo;el.style.display="block";el.classList.add("has-logo")}
+   else{el.style.display="none";el.removeAttribute("src")}
+ });
+}
+setTimeout(syncPublicCompanyLogo,1200);
+
+function syncOptionalBusinessName(){
+ const name=String(business.nombre??"").trim();
+ document.querySelectorAll("[data-business-name],[data-company]").forEach(el=>{
+   el.textContent=name;el.style.display=name?"":"none";
+ });
+ // Common brand text fallback used by older catalog markup.
+ document.querySelectorAll(".pub-brand .brand-text,.brand-name,.business-name").forEach(el=>{
+   if(!name)el.style.display="none";
+ });
+}
+setTimeout(syncOptionalBusinessName,1250);

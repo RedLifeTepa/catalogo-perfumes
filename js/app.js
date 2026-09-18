@@ -390,7 +390,7 @@ function escDoc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":
 function docMoney(n){return new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN"}).format(Number(n||0))}
 function docDate(v){return tsDate(v)?.toLocaleString("es-MX")||"—"}
 async function printProfessional(title,folio,body,meta=""){
- let c=await companyForDoc(),logo=c.logo?driveImage(c.logo):"",company=escDoc(c.nombre||"AuraERP"),w=window.open("","_blank","width=1050,height=850");
+ let c=await companyForDoc(),logo=(c.logo||c.logoUrl||c.logotipo)?driveImage(c.logo||c.logoUrl||c.logotipo):"",company=escDoc(String(c.nombre??"").trim()),w=window.open("","_blank","width=1050,height=850");
  if(!w)return alert("Permite ventanas emergentes para generar el documento.");
  const today=new Date().toLocaleDateString("es-MX",{day:"2-digit",month:"long",year:"numeric"});
  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>${escDoc(title)} ${escDoc(folio)}</title><style>
@@ -405,11 +405,11 @@ async function printProfessional(title,folio,body,meta=""){
  .actions{position:fixed;right:22px;bottom:22px;display:flex;gap:8px}.actions button{border:0;border-radius:10px;padding:11px 15px;font-weight:800;cursor:pointer}.print{background:#173a61;color:#fff}.close{background:#fff;color:#173a61;border:1px solid #dbe2ea!important}
  @media print{body{background:#fff}.sheet{margin:0;box-shadow:none;min-height:auto}.actions{display:none}.brandbar{-webkit-print-color-adjust:exact;print-color-adjust:exact}th{-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#173a61!important;color:#fff!important}.note{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
  @media(max-width:700px){.sheet{margin:0;min-height:100vh}.header,.dochead{grid-template-columns:1fr}.header-info,.folio-box{text-align:left}.content,.header,.dochead{padding-left:17px;padding-right:17px}.meta{grid-template-columns:1fr}.totals{width:100%}.signature-area{grid-template-columns:1fr;gap:40px}}
- </style></head><body><main class="sheet"><div class="brandbar"></div><header class="header"><div class="brandbox">${logo?`<img class="logo" src="${logo}">`:""}<div><div class="company-name">${company}</div><div class="company-sub">Documento comercial</div></div></div><div class="header-info"><strong>${c.whatsapp?`WhatsApp ${escDoc(c.whatsapp)}`:"Documento oficial"}</strong><span>Emitido: ${today}</span></div></header>
+ </style></head><body><main class="sheet"><div class="brandbar"></div><header class="header"><div class="brandbox">${logo?`<img class="logo" src="${logo}">`:""}<div>${company?`<div class="company-name">${company}</div>`:""}<div class="company-sub">Documento comercial</div></div></div><div class="header-info"><strong>${c.whatsapp?`WhatsApp ${escDoc(c.whatsapp)}`:"Documento oficial"}</strong><span>Emitido: ${today}</span></div></header>
  <section class="dochead"><div><div class="eyebrow">AuraERP · Documento</div><h1>${escDoc(title)}</h1></div>${folio?`<div class="folio-box"><div class="folio-label">Folio</div><div class="folio-value">${escDoc(folio)}</div></div>`:""}</section>
  <div class="content">${meta?`<div class="meta">${meta}</div>`:""}${body}</div>
  <div class="signature-area"><div class="signature">Elaboró / autorizó</div><div class="signature">Recibió / cliente</div></div>
- <footer class="footer"><span><strong>${company}</strong> · Documento generado por AuraERP</span><span>© ${new Date().getFullYear()} · Página impresa</span></footer></main>
+ <footer class="footer"><span>${company?`<strong>${company}</strong> · `:""}Documento generado por AuraERP</span><span>© ${new Date().getFullYear()} · Página impresa</span></footer></main>
  <div class="actions"><button class="close" onclick="window.close()">Cerrar</button><button class="print" onclick="window.print()">Imprimir / Guardar PDF</button></div></body></html>`);
  w.document.close();
 }
@@ -654,17 +654,17 @@ let faqRows=[];
 function renderFaqEditor(){
  const box=$("#faqEditor");if(!box)return;
  box.innerHTML=faqRows.map((x,i)=>`<div class="faq-edit-row"><div class="field"><label>Pregunta</label><input class="faq-q" data-i="${i}" value="${escDoc(x.pregunta||"")}"></div><div class="field"><label>Respuesta</label><textarea class="faq-a" data-i="${i}">${escDoc(x.respuesta||"")}</textarea></div><button type="button" class="smallbtn faq-remove" data-i="${i}">Eliminar</button></div>`).join("")||'<p class="muted">Todavía no has agregado preguntas.</p>';
- $$(".faq-remove").forEach(b=>b.onclick=()=>{faqRows.splice(Number(b.dataset.i),1);renderFaqEditor()});
+ $$(".faq-remove").forEach(b=>b.onclick=()=>{syncFaqDrafts();faqRows.splice(Number(b.dataset.i),1);renderFaqEditor()});
 }
 async function loadFaqConfig(){
  try{let s=await getDoc(doc(db,"configuracion","empresa"));faqRows=s.exists()?(s.data().preguntasFrecuentes||[]):[];renderFaqEditor()}catch(e){console.warn("FAQ",e)}
 }
-async function saveFaqConfig(){
+async function saveFaqConfig(){syncFaqDrafts();
  $$(".faq-q").forEach(x=>{let i=Number(x.dataset.i);faqRows[i].pregunta=x.value.trim()});$$(".faq-a").forEach(x=>{let i=Number(x.dataset.i);faqRows[i].respuesta=x.value.trim()});
  faqRows=faqRows.filter(x=>x.pregunta&&x.respuesta);
  await setDoc(doc(db,"configuracion","empresa"),{preguntasFrecuentes:faqRows,updatedAt:serverTimestamp()},{merge:true});
 }
-const addFaqBtn=$("#addFaqRow");if(addFaqBtn)addFaqBtn.onclick=()=>{faqRows.push({pregunta:"",respuesta:""});renderFaqEditor()};
+const addFaqBtn=$("#addFaqRow");if(addFaqBtn)addFaqBtn.onclick=()=>{syncFaqDrafts();faqRows.push({pregunta:"",respuesta:""});renderFaqEditor()};
 const originalSaveConfig=$("#saveConfig")?.onclick;if($("#saveConfig"))$("#saveConfig").addEventListener("click",()=>setTimeout(saveFaqConfig,50));
 setTimeout(loadFaqConfig,1300);
 
@@ -774,10 +774,21 @@ document.addEventListener("click",e=>{
 });
 
 let reviewRows=[];
-function renderReviewsEditor(){let b=$("#reviewsEditor");if(!b)return;b.innerHTML=reviewRows.map((x,i)=>`<div class="review-edit-row"><input class="review-name" data-i="${i}" placeholder="Nombre" value="${escDoc(x.nombre||"")}"><select class="review-stars-input" data-i="${i}">${[5,4,3,2,1].map(n=>`<option value="${n}" ${Number(x.estrellas||5)===n?"selected":""}>${"★".repeat(n)}</option>`).join("")}</select><textarea class="review-comment" data-i="${i}" placeholder="Comentario">${escDoc(x.comentario||"")}</textarea><button type="button" class="smallbtn review-remove" data-i="${i}">Eliminar</button></div>`).join("")||'<p class="muted">Sin opiniones.</p>';$$(".review-remove").forEach(x=>x.onclick=()=>{reviewRows.splice(+x.dataset.i,1);renderReviewsEditor()})}
+function renderReviewsEditor(){let b=$("#reviewsEditor");if(!b)return;b.innerHTML=reviewRows.map((x,i)=>`<div class="review-edit-row"><input class="review-name" data-i="${i}" placeholder="Nombre" value="${escDoc(x.nombre||"")}"><select class="review-stars-input" data-i="${i}">${[5,4,3,2,1].map(n=>`<option value="${n}" ${Number(x.estrellas||5)===n?"selected":""}>${"★".repeat(n)}</option>`).join("")}</select><textarea class="review-comment" data-i="${i}" placeholder="Comentario">${escDoc(x.comentario||"")}</textarea><button type="button" class="smallbtn review-remove" data-i="${i}">Eliminar</button></div>`).join("")||'<p class="muted">Sin opiniones.</p>';$$(".review-remove").forEach(x=>x.onclick=()=>{syncReviewDrafts();reviewRows.splice(+x.dataset.i,1);renderReviewsEditor()})}
 async function loadStoreCfg(){try{let s=await getDoc(doc(db,"configuracion","empresa")),d=s.exists()?s.data():{};$("#cfgWholesaleMin").value=Number(d.minimoMayoreo||3);$("#cfgRibbonEnabled").checked=d.cintillaMayoreo!==false;$("#cfgRibbonText").value=d.textoCintilla||`¡Compra ${Number(d.minimoMayoreo||3)} o más productos y obtén automáticamente precio de mayoreo!`;reviewRows=d.opinionesClientes||[];window.__auraWholesaleMin=Number(d.minimoMayoreo||3);renderReviewsEditor()}catch(e){}}
-async function saveStoreCfg(){$$(".review-name").forEach(x=>reviewRows[+x.dataset.i].nombre=x.value.trim());$$(".review-stars-input").forEach(x=>reviewRows[+x.dataset.i].estrellas=+x.value);$$(".review-comment").forEach(x=>reviewRows[+x.dataset.i].comentario=x.value.trim());reviewRows=reviewRows.filter(x=>x.nombre&&x.comentario);await setDoc(doc(db,"configuracion","empresa"),{minimoMayoreo:Math.max(1,+$("#cfgWholesaleMin").value||3),cintillaMayoreo:$("#cfgRibbonEnabled").checked,textoCintilla:$("#cfgRibbonText").value.trim(),opinionesClientes:reviewRows,updatedAt:serverTimestamp()},{merge:true})}
-$("#addReviewRow").onclick=()=>{reviewRows.push({nombre:"",comentario:"",estrellas:5});renderReviewsEditor()};$("#saveConfig").addEventListener("click",()=>setTimeout(saveStoreCfg,60));setTimeout(loadStoreCfg,1300);
+async function saveStoreCfg(){syncReviewDrafts();$$(".review-name").forEach(x=>reviewRows[+x.dataset.i].nombre=x.value.trim());$$(".review-stars-input").forEach(x=>reviewRows[+x.dataset.i].estrellas=+x.value);$$(".review-comment").forEach(x=>reviewRows[+x.dataset.i].comentario=x.value.trim());reviewRows=reviewRows.filter(x=>x.nombre&&x.comentario);await setDoc(doc(db,"configuracion","empresa"),{minimoMayoreo:Math.max(1,+$("#cfgWholesaleMin").value||3),cintillaMayoreo:$("#cfgRibbonEnabled").checked,textoCintilla:$("#cfgRibbonText").value.trim(),opinionesClientes:reviewRows,updatedAt:serverTimestamp()},{merge:true})}
+$("#addReviewRow").onclick=()=>{syncReviewDrafts();reviewRows.push({nombre:"",comentario:"",estrellas:5});renderReviewsEditor()};$("#saveConfig").addEventListener("click",()=>setTimeout(saveStoreCfg,60));setTimeout(loadStoreCfg,1300);
 function opAutoWholesale(){let min=Math.max(1,Number(window.__auraWholesaleMin||3)),units=opCart.reduce((s,x)=>s+x.qty,0),active=units>=min;opCart.forEach(x=>{let p=opProducts.find(z=>z.id===x.id);if(p){x.mode=active?"mayoreo":"menudeo";x.min=1;x.price=active&&Number(p.precioMayoreo||0)>0?Number(p.precioMayoreo):Number(p.precioMenudeo||p.precio||0)}})}
 const _renderOpCart=renderOpCart;renderOpCart=function(){opAutoWholesale();return _renderOpCart()};
 document.addEventListener("click",e=>{let b=e.target.closest("#newInventoryMovement,.quickMove");if(b&&typeof openInventoryMovement==="function"){e.preventDefault();openInventoryMovement(b.id==="newInventoryMovement"?"":b.dataset.id)}});
+
+// v1.9.5.7 - preserve unsaved FAQ/review drafts when adding more rows
+function syncFaqDrafts(){
+ $$(".faq-q").forEach(x=>{let i=Number(x.dataset.i);if(faqRows[i])faqRows[i].pregunta=x.value});
+ $$(".faq-a").forEach(x=>{let i=Number(x.dataset.i);if(faqRows[i])faqRows[i].respuesta=x.value});
+}
+function syncReviewDrafts(){
+ $$(".review-name").forEach(x=>{let i=Number(x.dataset.i);if(reviewRows[i])reviewRows[i].nombre=x.value});
+ $$(".review-stars-input").forEach(x=>{let i=Number(x.dataset.i);if(reviewRows[i])reviewRows[i].estrellas=Number(x.value)});
+ $$(".review-comment").forEach(x=>{let i=Number(x.dataset.i);if(reviewRows[i])reviewRows[i].comentario=x.value});
+}
