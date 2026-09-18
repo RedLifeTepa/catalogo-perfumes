@@ -178,3 +178,6 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .altosfilm-credit{text-align:center;width:100%;padding:10px 14px 4px;font-size:10px;letter-spacing:.02em;color:rgba(255,255,255,.72)}
 .altosfilm-credit a{color:#fff!important;text-decoration:none;font-weight:800}
 .altosfilm-credit a:hover{text-decoration:underline}
+
+/* v1.9.5.5 Altos Film centered */
+.store-footer .altosfilm-credit,footer .altosfilm-credit,.altosfilm-credit{display:block!important;flex:0 0 100%!important;width:100%!important;max-width:none!important;margin:12px auto 0!important;padding:10px 0 2px!important;text-align:center!important;justify-self:center!important;align-self:center!important;position:relative!important;left:auto!important;right:auto!important}.altosfilm-credit a{display:inline!important}

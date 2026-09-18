@@ -1,5 +1,3 @@
-# AuraERP v1.9.5.4
+# AuraERP v1.9.5.5
 
-- Crédito discreto al final de las páginas públicas: Creado por Altos Film · altosfilm.com.
-- Enlace abre https://altosfilm.com en una pestaña nueva.
-- Aplicado a catálogo, Preguntas frecuentes, Términos, Privacidad y Quiénes somos.
+- Crédito Altos Film centrado al 100% en una fila propia del footer.
