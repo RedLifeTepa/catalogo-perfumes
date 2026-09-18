@@ -169,3 +169,12 @@ button:disabled{opacity:.55;cursor:not-allowed}
  .wholesale-ribbon .ribbon-track{animation-duration:11s!important}
  .wholesale-ribbon .ribbon-track span{padding:0 12px!important}
 }
+
+/* v1.9.5.3 readable ribbon speed */
+.wholesale-ribbon .ribbon-track{animation-duration:28s!important;animation-timing-function:linear!important}
+.wholesale-ribbon:hover .ribbon-track{animation-play-state:paused!important}
+@media(max-width:800px){.wholesale-ribbon .ribbon-track{animation-duration:24s!important}}
+
+.altosfilm-credit{text-align:center;width:100%;padding:10px 14px 4px;font-size:10px;letter-spacing:.02em;color:rgba(255,255,255,.72)}
+.altosfilm-credit a{color:#fff!important;text-decoration:none;font-weight:800}
+.altosfilm-credit a:hover{text-decoration:underline}
