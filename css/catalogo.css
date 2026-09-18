@@ -181,3 +181,28 @@ button:disabled{opacity:.55;cursor:not-allowed}
 
 /* v1.9.5.5 Altos Film centered */
 .store-footer .altosfilm-credit,footer .altosfilm-credit,.altosfilm-credit{display:block!important;flex:0 0 100%!important;width:100%!important;max-width:none!important;margin:12px auto 0!important;padding:10px 0 2px!important;text-align:center!important;justify-self:center!important;align-self:center!important;position:relative!important;left:auto!important;right:auto!important}.altosfilm-credit a{display:inline!important}
+
+/* v1.9.5.6 desktop-safe developer credit: outside footer layout */
+.altosfilm-credit-row{
+ width:100%!important;
+ display:block!important;
+ clear:both!important;
+ background:#073457!important;
+ margin:0!important;
+ padding:0!important;
+ text-align:center!important;
+}
+.altosfilm-credit-row .altosfilm-credit{
+ width:100%!important;
+ display:block!important;
+ margin:0!important;
+ padding:10px 12px 13px!important;
+ text-align:center!important;
+ position:static!important;
+ transform:none!important;
+ float:none!important;
+ box-sizing:border-box!important;
+}
+.altosfilm-credit-row .altosfilm-credit a{
+ display:inline!important;
+}

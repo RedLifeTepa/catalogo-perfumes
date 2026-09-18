@@ -1,3 +1,6 @@
-# AuraERP v1.9.5.5
+# AuraERP v1.9.5.6
 
-- Crédito Altos Film centrado al 100% en una fila propia del footer.
+- Corrección estructural del crédito Altos Film en escritorio.
+- El crédito se sacó del grid/flex del footer.
+- Ahora vive en una fila independiente de ancho 100%, después del footer.
+- Centrado real respecto al viewport tanto en PC como móvil.
