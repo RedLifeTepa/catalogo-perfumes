@@ -376,6 +376,7 @@ setTimeout(loadInventory,1600);
 
 let docSales=[],docOrders=[],docClients=[],docProducts=[],docPayments=[],docInventory=[];
 async function loadDocumentCenter(){
+ if(!auth.currentUser)return;
  try{
   let [vs,os,cs,ps,abs,ims]=await Promise.all([getDocs(collection(db,"ventas")),getDocs(collection(db,"pedidos")),getDocs(collection(db,"clientes")),getDocs(collection(db,"productos")),getDocs(collection(db,"abonos")),getDocs(collection(db,"movimientosInventario"))]);
   docSales=vs.docs.map(d=>({id:d.id,...d.data()}));docOrders=os.docs.map(d=>({id:d.id,...d.data()}));docClients=cs.docs.map(d=>({id:d.id,...d.data()}));docProducts=ps.docs.map(d=>({id:d.id,...d.data()}));docPayments=abs.docs.map(d=>({id:d.id,...d.data()}));docInventory=ims.docs.map(d=>({id:d.id,...d.data()}));
@@ -822,6 +823,7 @@ const docsDate=v=>v?.toDate?v.toDate():v?.seconds?new Date(v.seconds*1000):v?new
 const docsDateText=v=>{let d=docsDate(v);return d?d.toLocaleDateString("es-MX",{day:"2-digit",month:"short",year:"numeric"}):"Sin fecha"};
 const docsMatchesDate=v=>{if(docsState.days==="all")return true;let d=docsDate(v);if(!d)return false;let days=Number(docsState.days);if(days===0){let n=new Date();return d.toDateString()===n.toDateString()}return Date.now()-d.getTime()<=days*86400000};
 async function loadDocumentCenter(){
+ if(!auth.currentUser)return;
  let defs=[["ventas","ventas"],["pedidos","pedidos"],["clientes","clientes"],["productos","productos"],["movimientos","movimientosInventario"]];
  let rs=await Promise.allSettled(defs.map(x=>getDocs(collection(db,x[1]))));rs.forEach((r,i)=>docsState[defs[i][0]]=r.status==="fulfilled"?r.value.docs.map(d=>({id:d.id,...d.data()})):[]);
  ["ventas","pedidos","clientes","movimientos"].forEach(k=>docsState[k].sort((a,b)=>(docsDate(b.createdAt)||0)-(docsDate(a.createdAt)||0)));
@@ -866,8 +868,16 @@ function renderDocumentDetail(){
   box.innerHTML=`<div class="doc-sheet-head"><div><small>KARDEX</small><h2>${x.nombre}</h2></div><span class="doc-badge">Stock ${Number(x.stock||0)}</span></div><div class="doc-info-grid"><div class="doc-info"><small>SKU</small><strong>${x.sku||"—"}</strong></div><div class="doc-info"><small>Movimientos</small><strong>${moves.length}</strong></div></div><div style="overflow:auto"><table class="kardex-table"><thead><tr><th>Fecha</th><th>Tipo</th><th>Cambio</th><th>Existencia</th></tr></thead><tbody>${moves.map(m=>`<tr><td>${docsDateText(m.createdAt)}</td><td>${m.tipo||""}</td><td>${Number(m.cambio||0)}</td><td>${Number(m.stockNuevo??0)}</td></tr>`).join("")||'<tr><td colspan="4">Sin movimientos.</td></tr>'}</tbody></table></div><div class="doc-actions"><button class="btn btn-primary" id="docsGenerate">📦 Generar Kardex</button></div>`;$("#docsGenerate").onclick=()=>printKardex(x.id);
  }
 }
-$$(".docs-tab").forEach(b=>b.onclick=()=>{$$(".docs-tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");docsState.tab=b.dataset.docTab;docsState.selected=null;docsState.limit=20;$("#docsSearch").value="";renderDocumentCenter();renderDocumentDetail()});
-$$(".docs-filter").forEach(b=>b.onclick=()=>{$$(".docs-filter").forEach(x=>x.classList.remove("active"));b.classList.add("active");docsState.days=b.dataset.docDays;docsState.limit=20;renderDocumentCenter()});
-let docsTimer;$("#docsSearch").oninput=()=>{clearTimeout(docsTimer);docsTimer=setTimeout(()=>{docsState.limit=20;docsState.selected=null;renderDocumentCenter();renderDocumentDetail()},180)};
-$("#docsLoadMore").onclick=()=>{docsState.limit+=20;renderDocumentCenter()};
-setTimeout(loadDocumentCenter,1800);
+document.querySelectorAll(".docs-tab").forEach(b=>b.onclick=()=>{$$(".docs-tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");docsState.tab=b.dataset.docTab;docsState.selected=null;docsState.limit=20;$("#docsSearch").value="";renderDocumentCenter();renderDocumentDetail()});
+document.querySelectorAll(".docs-filter").forEach(b=>b.onclick=()=>{$$(".docs-filter").forEach(x=>x.classList.remove("active"));b.classList.add("active");docsState.days=b.dataset.docDays;docsState.limit=20;renderDocumentCenter()});
+let docsTimer;const docsSearchEl=$("#docsSearch");if(docsSearchEl)docsSearchEl.oninput=()=>{clearTimeout(docsTimer);docsTimer=setTimeout(()=>{docsState.limit=20;docsState.selected=null;renderDocumentCenter();renderDocumentDetail()},180)};
+const docsMoreEl=$("#docsLoadMore");if(docsMoreEl)docsMoreEl.onclick=()=>{docsState.limit+=20;renderDocumentCenter()};
+
+
+// v1.9.7.1 - Document Center must never interfere with authentication.
+document.addEventListener("click",e=>{
+ const nav=e.target.closest('[data-module="documentos"]');
+ if(nav && auth.currentUser){
+   setTimeout(()=>loadDocumentCenter().catch(err=>console.error("Document Center:",err)),80);
+ }
+});
