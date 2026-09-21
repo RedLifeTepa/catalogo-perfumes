@@ -17,3 +17,11 @@ async function load(){
 function escapeHTML(v){return String(v||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 load();
 setTimeout(async()=>{try{let sn=await getDoc(doc(db,"configuracion","empresa")),d=sn.exists()?sn.data():{},web=Math.max(60,Number(d.logoWebSize||160)),mobile=Math.max(50,Number(d.logoMobileSize||110));document.querySelectorAll("[data-company-logo]").forEach(img=>{img.style.maxWidth=web+"px";img.style.width="auto";img.dataset.mobileWidth=mobile})}catch(e){}},250);
+
+async function syncPublicHeaderLogos(){
+ try{
+  const sn=await getDoc(doc(db,"configuracion","empresa")),d=sn.exists()?sn.data():{},raw=d.logo||d.logoUrl||d.logotipo||"",web=Math.max(60,Number(d.logoWebSize||160)),mobile=Math.max(50,Number(d.logoMobileSize||110)),size=innerWidth<=700?mobile:web;
+  document.querySelectorAll("[data-company-logo]").forEach(img=>{if(raw){img.src=raw;img.classList.add("has-logo");img.style.display="block";img.style.width=size+"px";img.style.maxWidth=size+"px";img.style.height="auto"}else{img.style.display="none"}});
+ }catch(e){console.warn("Public logo",e)}
+}
+setTimeout(syncPublicHeaderLogos,250);addEventListener("resize",syncPublicHeaderLogos);
