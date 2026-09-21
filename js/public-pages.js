@@ -16,3 +16,4 @@ async function load(){
 }
 function escapeHTML(v){return String(v||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 load();
+setTimeout(async()=>{try{let sn=await getDoc(doc(db,"configuracion","empresa")),d=sn.exists()?sn.data():{},web=Math.max(60,Number(d.logoWebSize||160)),mobile=Math.max(50,Number(d.logoMobileSize||110));document.querySelectorAll("[data-company-logo]").forEach(img=>{img.style.maxWidth=web+"px";img.style.width="auto";img.dataset.mobileWidth=mobile})}catch(e){}},250);

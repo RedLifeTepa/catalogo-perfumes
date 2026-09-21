@@ -211,3 +211,10 @@ function syncOptionalBusinessName(){
  });
 }
 setTimeout(syncOptionalBusinessName,1250);
+
+function syncConfiguredLogoSize(){
+ const web=Math.max(60,Number(business.logoWebSize||160)),mobile=Math.max(50,Number(business.logoMobileSize||110));
+ document.documentElement.style.setProperty("--company-logo-web",web+"px");
+ document.documentElement.style.setProperty("--company-logo-mobile",mobile+"px");
+}
+setTimeout(syncConfiguredLogoSize,1250);
