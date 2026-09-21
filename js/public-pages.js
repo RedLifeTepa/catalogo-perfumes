@@ -9,7 +9,7 @@ async function load(){
    else{img.removeAttribute("src");img.classList.remove("has-logo");img.style.display="none"}
  });
 
- const name=(business.nombre??"").trim();document.querySelectorAll("[data-company]").forEach(x=>{x.textContent=name;x.style.display=name?"":"none"});
+ const name=String(business.nombre??"").trim();document.querySelectorAll("[data-company]").forEach(x=>{x.textContent=name;x.style.display=name?"":"none"});
  document.querySelectorAll("[data-year]").forEach(x=>x.textContent=new Date().getFullYear());
  document.querySelectorAll("[data-date]").forEach(x=>x.textContent=new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"}));
  if($("#faqList")){$("#faqList").innerHTML=(business.preguntasFrecuentes||[]).map(x=>`<details><summary>${escapeHTML(x.pregunta)}</summary><div>${escapeHTML(x.respuesta).replace(/\n/g,"<br>")}</div></details>`).join("")||'<p>Aún no se han publicado preguntas frecuentes.</p>'}

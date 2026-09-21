@@ -31,7 +31,7 @@ async function init(){
 
 function showCatalogDiagnostic(text){let el=document.querySelector("#catalogDiagnostic");if(!el){el=document.createElement("div");el.id="catalogDiagnostic";el.className="catalog-diagnostic";document.querySelector(".catalog")?.prepend(el)}el.textContent=text}
 function renderConfig(){
- $("#brandName").textContent=business.nombre||"AuraERP";
+ $("#brandName").textContent=(business.nombre??"").trim();
  if(business.logo){$("#brandLogo").src=drive(business.logo);$("#brandLogo").style.display="block"}else $("#brandLogo").style.display="none";
 }
 
@@ -153,7 +153,7 @@ function renderExtras(){
  ];
  const benefits=Array.isArray(business.beneficios)&&business.beneficios.length?business.beneficios:defaults;
  $("#benefits").innerHTML=benefits.map(x=>`<div class="benefit"><div class="benefit-icon">${x.icon}</div><div><strong>${x.title}</strong><small>${x.text}</small></div></div>`).join("");
- $("#copyright").textContent=`© ${new Date().getFullYear()} ${business.nombre||"AuraERP"}. Todos los derechos reservados.`;
+ $("#copyright").textContent=`© ${new Date().getFullYear()} ${(business.nombre??"").trim()}. Todos los derechos reservados.`;
  let socials=[];if(business.facebook)socials.push(`<a href="${business.facebook}" target="_blank">ⓕ</a>`);if(business.instagram)socials.push(`<a href="${business.instagram}" target="_blank">◎</a>`);if(business.whatsapp)socials.push(`<a href="https://wa.me/${String(business.whatsapp).replace(/\D/g,"")}" target="_blank">◉</a>`);
  $("#socials").innerHTML=socials.length?`Síguenos: ${socials.join(" ")}`:"";
 }
