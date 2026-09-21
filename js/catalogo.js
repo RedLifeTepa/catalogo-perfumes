@@ -218,3 +218,10 @@ function syncConfiguredLogoSize(){
  document.documentElement.style.setProperty("--company-logo-mobile",mobile+"px");
 }
 setTimeout(syncConfiguredLogoSize,1250);
+
+function forceLogoConfiguredSize(){
+ const web=Math.max(60,Number(business.logoWebSize||160)),mobile=Math.max(50,Number(business.logoMobileSize||110)),size=innerWidth<=700?mobile:web,logo=business.logo||business.logoUrl||business.logotipo||"";
+ document.documentElement.style.setProperty("--company-logo-web",web+"px");document.documentElement.style.setProperty("--company-logo-mobile",mobile+"px");
+ document.querySelectorAll("header img,[data-company-logo],.catalog-company-logo,.brand-logo,.business-logo,.pub-logo").forEach(el=>{if(logo&&(el.hasAttribute("data-company-logo")||/logo/i.test(el.className||""))){if(!el.src)el.src=driveImage(logo);el.style.setProperty("width",size+"px","important");el.style.setProperty("max-width",size+"px","important");el.style.setProperty("height","auto","important");el.style.setProperty("max-height","90px","important")}});
+}
+setTimeout(forceLogoConfiguredSize,1500);addEventListener("resize",forceLogoConfiguredSize);

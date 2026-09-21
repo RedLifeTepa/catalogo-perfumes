@@ -802,3 +802,16 @@ async function loadLogoSizeConfig(){try{let sn=await getDoc(doc(db,"configuracio
 async function saveLogoSizeConfig(){await setDoc(doc(db,"configuracion","empresa"),{logoWebSize:Math.max(60,Number($("#cfgLogoWebSize").value||160)),logoMobileSize:Math.max(50,Number($("#cfgLogoMobileSize").value||110)),logoDocSize:Math.max(70,Number($("#cfgLogoDocSize").value||145)),updatedAt:serverTimestamp()},{merge:true})}
 ["cfgLogoWebSize","cfgLogoMobileSize","cfgLogoDocSize"].forEach(id=>$("#"+id)?.addEventListener("input",updateLogoSizeControls));
 $("#saveConfig")?.addEventListener("click",()=>setTimeout(saveLogoSizeConfig,90));setTimeout(loadLogoSizeConfig,1450);
+
+// v1.9.6.1 functional logo size preview
+async function refreshLogoSizePreview(){
+ try{
+  const sn=await getDoc(doc(db,"configuracion","empresa")),d=sn.exists()?sn.data():{};
+  window.__auraConfigLogo=driveImage(d.logo||d.logoUrl||d.logotipo||"");
+  const w=Number($("#cfgLogoWebSize")?.value||d.logoWebSize||160),m=Number($("#cfgLogoMobileSize")?.value||d.logoMobileSize||110),ds=Number($("#cfgLogoDocSize")?.value||d.logoDocSize||145);
+  if($("#logoWebSizeValue"))$("#logoWebSizeValue").textContent=w;if($("#logoMobileSizeValue"))$("#logoMobileSizeValue").textContent=m;if($("#logoDocSizeValue"))$("#logoDocSizeValue").textContent=ds;
+  let p=$("#logoSizePreview");if(p&&window.__auraConfigLogo){p.src=window.__auraConfigLogo;p.style.display="block";p.style.width=w+"px";p.style.maxWidth="100%";p.style.height="auto"}
+ }catch(e){console.warn(e)}
+}
+document.addEventListener("input",e=>{if(e.target.matches("#cfgLogoWebSize,#cfgLogoMobileSize,#cfgLogoDocSize")){let w=Number($("#cfgLogoWebSize").value),m=Number($("#cfgLogoMobileSize").value),d=Number($("#cfgLogoDocSize").value);$("#logoWebSizeValue").textContent=w;$("#logoMobileSizeValue").textContent=m;$("#logoDocSizeValue").textContent=d;let p=$("#logoSizePreview");if(p&&window.__auraConfigLogo){p.src=window.__auraConfigLogo;p.style.display="block";p.style.width=w+"px";p.style.maxWidth="100%"}}});
+setTimeout(refreshLogoSizePreview,1700);

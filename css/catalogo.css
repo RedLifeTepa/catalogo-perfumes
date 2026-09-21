@@ -215,3 +215,5 @@ button:disabled{opacity:.55;cursor:not-allowed}
 /* configurable logo size */
 .catalog-company-logo,.public-company-logo{width:auto!important;max-width:var(--company-logo-web,160px)!important;max-height:82px!important;object-fit:contain!important}
 @media(max-width:700px){.catalog-company-logo,.public-company-logo{max-width:var(--company-logo-mobile,110px)!important;max-height:60px!important}}
+
+[data-company-logo],.catalog-company-logo,.brand-logo,.business-logo,.pub-logo{width:var(--company-logo-web,160px)!important;max-width:var(--company-logo-web,160px)!important;height:auto!important;max-height:90px!important;object-fit:contain!important}@media(max-width:700px){[data-company-logo],.catalog-company-logo,.brand-logo,.business-logo,.pub-logo{width:var(--company-logo-mobile,110px)!important;max-width:var(--company-logo-mobile,110px)!important;max-height:70px!important}}

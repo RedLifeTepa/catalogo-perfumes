@@ -1,10 +1,6 @@
-# AuraERP v1.9.6.0 - Tamaño configurable de logotipo
+# AuraERP v1.9.6.1
 
-- Configuración incluye tres controles de tamaño:
-  - Web/escritorio: 60–320 px.
-  - Móvil: 50–220 px.
-  - Documentos: 70–240 px.
-- Vista previa inmediata.
-- Los valores se guardan en Firebase.
-- Se aplican al catálogo, páginas públicas y documentos imprimibles.
-- No modifica el archivo original del logo.
+- Corregida vista previa del logo.
+- Sliders actualizan la vista previa en tiempo real.
+- Tamaño configurado se aplica al logo real del catálogo.
+- Refuerzo responsive escritorio/móvil.

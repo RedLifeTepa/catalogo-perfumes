@@ -211,3 +211,5 @@ html,body{height:100%}
 .field-hint{display:block;margin-top:4px;color:var(--muted);font-size:10px;font-weight:400}
 
 .logo-size-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.logo-size-grid label{font-size:11px;font-weight:800}.logo-size-grid label strong{float:right;color:var(--muted)}.logo-size-grid input[type=range]{display:block;width:100%;margin-top:12px}.logo-size-preview{margin-top:16px;min-height:100px;padding:14px;border:1px dashed var(--border);border-radius:12px;background:var(--bg);display:flex;flex-direction:column;align-items:flex-start;gap:10px;overflow:hidden}.logo-size-preview span{font-size:10px;color:var(--muted)}.logo-size-preview img{display:none;max-height:80px;object-fit:contain}@media(max-width:700px){.logo-size-grid{grid-template-columns:1fr}}
+
+.logo-size-preview{min-height:140px!important;justify-content:center!important;align-items:center!important}.logo-size-preview>span{align-self:flex-start!important}#logoSizePreview{max-height:105px!important;object-fit:contain!important;transition:width .12s ease!important}
