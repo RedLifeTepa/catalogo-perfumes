@@ -815,3 +815,59 @@ async function refreshLogoSizePreview(){
 }
 document.addEventListener("input",e=>{if(e.target.matches("#cfgLogoWebSize,#cfgLogoMobileSize,#cfgLogoDocSize")){let w=Number($("#cfgLogoWebSize").value),m=Number($("#cfgLogoMobileSize").value),d=Number($("#cfgLogoDocSize").value);$("#logoWebSizeValue").textContent=w;$("#logoMobileSizeValue").textContent=m;$("#logoDocSizeValue").textContent=d;let p=$("#logoSizePreview");if(p&&window.__auraConfigLogo){p.src=window.__auraConfigLogo;p.style.display="block";p.style.width=w+"px";p.style.maxWidth="100%"}}});
 setTimeout(refreshLogoSizePreview,1700);
+
+// v1.9.7.0 scalable Document Center
+let docsState={tab:"ventas",days:"all",limit:20,selected:null,ventas:[],pedidos:[],clientes:[],productos:[],movimientos:[]};
+const docsDate=v=>v?.toDate?v.toDate():v?.seconds?new Date(v.seconds*1000):v?new Date(v):null;
+const docsDateText=v=>{let d=docsDate(v);return d?d.toLocaleDateString("es-MX",{day:"2-digit",month:"short",year:"numeric"}):"Sin fecha"};
+const docsMatchesDate=v=>{if(docsState.days==="all")return true;let d=docsDate(v);if(!d)return false;let days=Number(docsState.days);if(days===0){let n=new Date();return d.toDateString()===n.toDateString()}return Date.now()-d.getTime()<=days*86400000};
+async function loadDocumentCenter(){
+ let defs=[["ventas","ventas"],["pedidos","pedidos"],["clientes","clientes"],["productos","productos"],["movimientos","movimientosInventario"]];
+ let rs=await Promise.allSettled(defs.map(x=>getDocs(collection(db,x[1]))));rs.forEach((r,i)=>docsState[defs[i][0]]=r.status==="fulfilled"?r.value.docs.map(d=>({id:d.id,...d.data()})):[]);
+ ["ventas","pedidos","clientes","movimientos"].forEach(k=>docsState[k].sort((a,b)=>(docsDate(b.createdAt)||0)-(docsDate(a.createdAt)||0)));
+ renderDocumentCenter();
+}
+function docsSource(){
+ let q=($("#docsSearch")?.value||"").toLowerCase().trim(),arr=[],tab=docsState.tab;
+ if(tab==="ventas")arr=docsState.ventas.filter(x=>docsMatchesDate(x.createdAt)).filter(x=>!q||`${x.folio||""} ${x.clienteNombre||""} ${x.telefono||""}`.toLowerCase().includes(q));
+ if(tab==="pedidos")arr=docsState.pedidos.filter(x=>docsMatchesDate(x.createdAt)).filter(x=>!q||`${x.folio||""} ${x.clienteNombre||""} ${x.telefono||""}`.toLowerCase().includes(q));
+ if(tab==="cuentas")arr=docsState.clientes.filter(x=>!q||`${x.nombre||""} ${x.telefono||""} ${x.email||""}`.toLowerCase().includes(q));
+ if(tab==="kardex")arr=docsState.productos.filter(x=>!q||`${x.nombre||""} ${x.sku||""} ${x.categoriaNombre||""}`.toLowerCase().includes(q));
+ return arr;
+}
+function renderDocumentCenter(){
+ let arr=docsSource(),shown=arr.slice(0,docsState.limit),titles={ventas:"ventas",pedidos:"pedidos",cuentas:"clientes",kardex:"productos"};
+ $("#docsListTitle").textContent=`${$("#docsSearch").value?"Resultados":"Últimos"} ${Math.min(docsState.limit,arr.length)} ${titles[docsState.tab]}`;
+ $("#docsResultCount").textContent=`${arr.length} encontrado${arr.length===1?"":"s"}`;
+ $("#docsLoadMore").classList.toggle("hidden",arr.length<=docsState.limit);
+ $("#docsResults").innerHTML=shown.map(x=>{
+  let title,sub,amount="";
+  if(docsState.tab==="ventas"){title=`${x.folio||"Venta"} · ${x.clienteNombre||"Mostrador"}`;sub=`${docsDateText(x.createdAt)} · ${x.estado||x.tipo||""}`;amount=mx(x.total)}
+  if(docsState.tab==="pedidos"){title=`${x.folio||"Pedido"} · ${x.clienteNombre||"Sin cliente"}`;sub=`${docsDateText(x.createdAt)} · ${x.estado||""}`;amount=mx(x.total)}
+  if(docsState.tab==="cuentas"){title=x.nombre||x.telefono||"Cliente";sub=`${x.telefono||""}${x.email?" · "+x.email:""}`;amount=Number(x.totalPendiente||0)>0?mx(x.totalPendiente):""}
+  if(docsState.tab==="kardex"){title=x.nombre||"Producto";sub=`SKU ${x.sku||"—"} · Stock ${Number(x.stock||0)}`;amount=""}
+  return `<button class="doc-result ${docsState.selected===x.id?"active":""}" data-doc-id="${x.id}"><span><strong>${title}</strong><small>${sub}</small></span><span class="doc-amount">${amount}</span></button>`;
+ }).join("")||'<p class="muted">No encontramos registros con estos filtros.</p>';
+ $$(".doc-result").forEach(b=>b.onclick=()=>{docsState.selected=b.dataset.docId;renderDocumentCenter();renderDocumentDetail()});
+}
+function renderDocumentDetail(){
+ let tab=docsState.tab,x=docsSource().find(v=>v.id===docsState.selected),box=$("#docsDetail");if(!x){box.innerHTML='<div class="docs-empty"><span>📄</span><strong>Selecciona un registro</strong><p>La información aparecerá aquí antes de generar el documento.</p></div>';return}
+ if(tab==="ventas"||tab==="pedidos"){
+  let paid=Number(x.totalPagado||0),balance=Number(x.saldo??Math.max(0,Number(x.total||0)-paid)),lines=(x.productos||[]).map(i=>`<div class="doc-line"><span><strong>${i.nombre||"Producto"}</strong><small>${i.cantidad||1} × ${mx(i.precioUnitario||0)}</small></span><strong>${mx(i.subtotal||Number(i.cantidad||1)*Number(i.precioUnitario||0))}</strong></div>`).join("");
+  box.innerHTML=`<div class="doc-sheet-head"><div><small>${tab==="ventas"?"VENTA":"PEDIDO"}</small><h2>${x.folio||"Sin folio"}</h2></div><span class="doc-badge">${x.estado||x.tipo||""}</span></div><div class="doc-info-grid"><div class="doc-info"><small>Cliente</small><strong>${x.clienteNombre||"Venta de mostrador"}</strong><span>${x.telefono||""}</span></div><div class="doc-info"><small>Fecha</small><strong>${docsDateText(x.createdAt)}</strong><span>Origen: ${x.origen||"sistema"}</span></div></div><div class="doc-lines">${lines}</div><div class="doc-totals"><div><span>Total</span><strong>${mx(x.total)}</strong></div>${tab==="ventas"?`<div><span>Pagado</span><strong>${mx(paid)}</strong></div><div><span>Saldo</span><strong>${mx(balance)}</strong></div>`:""}</div><div class="doc-actions"><button class="btn btn-primary" id="docsGenerate">${tab==="ventas"?"🧾 Generar comprobante":"🛍️ Generar pedido"}</button></div>`;
+  $("#docsGenerate").onclick=()=>tab==="ventas"?printSale(x.id):printOrder(x.id);
+ }
+ if(tab==="cuentas"){
+  let sales=docsState.ventas.filter(v=>v.clienteID===x.id),total=sales.reduce((s,v)=>s+Number(v.total||0),0),paid=sales.reduce((s,v)=>s+Number(v.totalPagado||0),0),bal=sales.reduce((s,v)=>s+Number(v.saldo||0),0);
+  box.innerHTML=`<div class="doc-sheet-head"><div><small>CLIENTE</small><h2>${x.nombre||x.telefono}</h2></div></div><div class="doc-info-grid"><div class="doc-info"><small>Teléfono</small><strong>${x.telefono||"—"}</strong></div><div class="doc-info"><small>Correo</small><strong>${x.email||"—"}</strong></div><div class="doc-info"><small>Total comprado</small><strong>${mx(total)}</strong></div><div class="doc-info"><small>Saldo pendiente</small><strong>${mx(bal)}</strong></div></div><div class="doc-actions"><button class="btn btn-primary" id="docsGenerate">💳 Generar estado de cuenta</button></div>`;$("#docsGenerate").onclick=()=>printStatement(x.id);
+ }
+ if(tab==="kardex"){
+  let moves=docsState.movimientos.filter(m=>m.productoID===x.id).slice(0,50);
+  box.innerHTML=`<div class="doc-sheet-head"><div><small>KARDEX</small><h2>${x.nombre}</h2></div><span class="doc-badge">Stock ${Number(x.stock||0)}</span></div><div class="doc-info-grid"><div class="doc-info"><small>SKU</small><strong>${x.sku||"—"}</strong></div><div class="doc-info"><small>Movimientos</small><strong>${moves.length}</strong></div></div><div style="overflow:auto"><table class="kardex-table"><thead><tr><th>Fecha</th><th>Tipo</th><th>Cambio</th><th>Existencia</th></tr></thead><tbody>${moves.map(m=>`<tr><td>${docsDateText(m.createdAt)}</td><td>${m.tipo||""}</td><td>${Number(m.cambio||0)}</td><td>${Number(m.stockNuevo??0)}</td></tr>`).join("")||'<tr><td colspan="4">Sin movimientos.</td></tr>'}</tbody></table></div><div class="doc-actions"><button class="btn btn-primary" id="docsGenerate">📦 Generar Kardex</button></div>`;$("#docsGenerate").onclick=()=>printKardex(x.id);
+ }
+}
+$$(".docs-tab").forEach(b=>b.onclick=()=>{$$(".docs-tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");docsState.tab=b.dataset.docTab;docsState.selected=null;docsState.limit=20;$("#docsSearch").value="";renderDocumentCenter();renderDocumentDetail()});
+$$(".docs-filter").forEach(b=>b.onclick=()=>{$$(".docs-filter").forEach(x=>x.classList.remove("active"));b.classList.add("active");docsState.days=b.dataset.docDays;docsState.limit=20;renderDocumentCenter()});
+let docsTimer;$("#docsSearch").oninput=()=>{clearTimeout(docsTimer);docsTimer=setTimeout(()=>{docsState.limit=20;docsState.selected=null;renderDocumentCenter();renderDocumentDetail()},180)};
+$("#docsLoadMore").onclick=()=>{docsState.limit+=20;renderDocumentCenter()};
+setTimeout(loadDocumentCenter,1800);
