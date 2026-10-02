@@ -50,6 +50,61 @@
 @media(max-width:520px){
  .stats{transform:none!important;width:100%!important}
 }
+
+/* v1.9.8.3 definitive stats separation */
+.hero{
+  position:relative!important;
+  min-height:620px!important;
+  overflow:hidden!important;
+  margin:0!important;
+}
+.hero-image{
+  position:relative!important;
+  height:auto!important;
+  min-height:620px!important;
+  overflow:hidden!important;
+}
+.hero-image .visual-bottle{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+}
+.hero-image .visual-bottle img.loaded{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  object-position:center!important;
+}
+.stats{
+  position:relative!important;
+  z-index:1!important;
+  display:grid!important;
+  grid-template-columns:repeat(3,1fr)!important;
+  width:min(1120px,calc(100% - 48px))!important;
+  max-width:1120px!important;
+  margin:32px auto 0!important;
+  transform:none!important;
+  top:auto!important;
+  bottom:auto!important;
+  left:auto!important;
+  right:auto!important;
+  clear:both!important;
+  overflow:hidden!important;
+}
+.wrap.story{padding-top:72px!important}
+@media(max-width:820px){
+ .hero{min-height:auto!important}
+ .hero-image{min-height:430px!important;height:430px!important}
+ .stats{width:calc(100% - 28px)!important;margin:18px auto 0!important;grid-template-columns:repeat(3,1fr)!important}
+ .wrap.story{padding-top:55px!important}
+}
+@media(max-width:520px){
+ .hero-image{min-height:350px!important;height:350px!important}
+ .stats{grid-template-columns:1fr!important;width:calc(100% - 24px)!important;margin:16px auto 0!important}
+}
 </style></head><body>
 <header class="top"><a class="public-home-logo" href="./index.html" aria-label="Volver al catálogo"><img data-company-logo class="public-company-logo" alt=""></a><a class="back-catalog" href="./index.html">← Volver al catálogo</a></header>
 <main>
@@ -65,7 +120,7 @@
 <section class="closing"><span class="section-label">Perfumería Chegar’s</span><h2>Fragancias originales. Experiencia que respalda. Confianza que perdura.</h2><p>Encuentra una fragancia para tu estilo, personalidad y ocasión.</p><a class="cta" href="./index.html">Explorar catálogo →</a></section>
 </main>
 <footer class="foot">© <span data-year></span> <span data-company></span>. Todos los derechos reservados.<div class="altosfilm-credit">Creado por <a href="https://altosfilm.com" target="_blank" rel="noopener noreferrer">Altos Film · altosfilm.com</a></div></footer>
-<script type="module" src="./js/public-pages.js?v=1.9.8.2"></script><script type="module">
+<script type="module" src="./js/public-pages.js?v=1.9.8.3"></script><script type="module">
 import { db } from "./js/firebase-config.js";
 import { collection,getDocs,query,limit } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 function dimg(url){if(!url)return "";let s=String(url),m=s.match(/\/file\/d\/([^/]+)/)||s.match(/[?&]id=([^&]+)/);return m?`https://drive.google.com/thumbnail?id=${m[1]}&sz=w1200`:s}

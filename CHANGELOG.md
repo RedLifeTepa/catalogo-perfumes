@@ -1,8 +1,8 @@
-# AuraERP v1.9.8.2 - Hero / Estadísticas Layout Fix
+# AuraERP v1.9.8.3 - Separación definitiva Hero / Estadísticas
 
-- Corregida superposición entre la fotografía principal y las tarjetas 10+ / 100% / Online.
-- Las estadísticas ahora pertenecen al flujo normal debajo del hero.
-- Se conserva un pequeño efecto flotante de 26 px en escritorio sin tapar contenido.
-- En móvil no existe superposición.
-- Fotografías y contenido de Quiénes somos se conservan.
+- Se eliminó por completo cualquier desplazamiento negativo de las estadísticas.
+- El hero tiene una altura propia y recorta internamente la fotografía.
+- La tarjeta 10+ / 100% / Online ahora empieza 32 px DESPUÉS del hero.
+- La fotografía no puede invadir la tarjeta de estadísticas.
+- En móvil las estadísticas también permanecen en flujo normal.
 - Login/Auth sin cambios.
