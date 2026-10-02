@@ -1,7 +1,5 @@
-# AuraERP v1.9.7.7
+# AuraERP v1.9.7.9
 
-- Logo duplicado corregido en Quiénes somos.
-- Imágenes externas eliminadas.
-- Quiénes somos usa imágenes reales del catálogo Firebase cuando están disponibles.
-- Fallback visual premium si una imagen no carga.
+- Perfume visible garantizado en el hero de Quiénes somos.
+- Imagen local, sin depender de Firebase ni servicios externos.
 - Login/Auth sin cambios.
