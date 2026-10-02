@@ -1,7 +1,8 @@
-# AuraERP v1.9.8.1 - Foto Historia Chegar's
+# AuraERP v1.9.8.2 - Hero / Estadísticas Layout Fix
 
-- Se reemplazó el bloque gráfico "Una década entre fragancias" por la fotografía proporcionada por el usuario.
-- Imagen guardada localmente como `assets/chegars-historia-perfume.png`.
-- Recorte responsive con object-fit cover.
-- Se conserva la fotografía anterior en el hero principal.
+- Corregida superposición entre la fotografía principal y las tarjetas 10+ / 100% / Online.
+- Las estadísticas ahora pertenecen al flujo normal debajo del hero.
+- Se conserva un pequeño efecto flotante de 26 px en escritorio sin tapar contenido.
+- En móvil no existe superposición.
+- Fotografías y contenido de Quiénes somos se conservan.
 - Login/Auth sin cambios.
