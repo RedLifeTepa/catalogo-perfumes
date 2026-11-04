@@ -1,4 +1,4 @@
-import {auth,db,onAuthStateChanged,signInWithEmailAndPassword,signOut,sendPasswordResetEmail,doc,getDoc,setDoc,addDoc,collection,serverTimestamp,getDocs,updateDoc,query,where,limit,runTransaction} from "./firebase-config.js";
+import {auth,db,onAuthStateChanged,signInWithEmailAndPassword,signOut,sendPasswordResetEmail,doc,getDoc,setDoc,addDoc,collection,serverTimestamp,getDocs,updateDoc,query,where,limit,runTransaction,writeBatch} from "./firebase-config.js";
 
 // v1.9.0 QA/Hardening
 window.addEventListener("error",e=>console.error("[AuraERP runtime]",e.error||e.message));

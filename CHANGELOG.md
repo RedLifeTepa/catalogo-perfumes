@@ -1,8 +1,7 @@
-# AuraERP v1.9.8.3 - Separación definitiva Hero / Estadísticas
+# AuraERP v1.9.8.5
 
-- Se eliminó por completo cualquier desplazamiento negativo de las estadísticas.
-- El hero tiene una altura propia y recorta internamente la fotografía.
-- La tarjeta 10+ / 100% / Online ahora empieza 32 px DESPUÉS del hero.
-- La fotografía no puede invadir la tarjeta de estadísticas.
-- En móvil las estadísticas también permanecen en flujo normal.
+- Corregido error `writeBatch is not defined` en Limpieza de datos.
+- writeBatch agregado correctamente a firebase-config.js y app.js.
+- Doble confirmación corregida para mostrar una etapa a la vez.
+- El 404 de favicon no afecta la operación del sistema.
 - Login/Auth sin cambios.
