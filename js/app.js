@@ -1,4 +1,4 @@
-import {auth,db,onAuthStateChanged,signInWithEmailAndPassword,signOut,sendPasswordResetEmail,doc,getDoc,setDoc,addDoc,collection,serverTimestamp,getDocs,updateDoc,query,where,limit,runTransaction,writeBatch} from "./firebase-config.js";
+import {auth,db,onAuthStateChanged,signInWithEmailAndPassword,signOut,sendPasswordResetEmail,doc,getDoc,setDoc,addDoc,collection,serverTimestamp,getDocs,updateDoc,query,where,limit,runTransaction,deleteDoc} from "./firebase-config.js";
 
 // v1.9.0 QA/Hardening
 window.addEventListener("error",e=>console.error("[AuraERP runtime]",e.error||e.message));
@@ -834,5 +834,14 @@ document.querySelectorAll("[data-clean]").forEach(x=>x.addEventListener("change"
 $("#startCleanup")?.addEventListener("click",()=>{let s=selectedCleanup();if(!s.length)return;$("#cleanupSelectedList").innerHTML=s.map(x=>`<div>🗑️ ${CLEAN_LABELS[x]}</div>`).join("");$("#cleanupStep1").classList.remove("hidden");$("#cleanupStep2").classList.add("hidden");$("#cleanupPhrase").value="";$("#cleanupFinalCheck").checked=false;$("#cleanupExecute").disabled=true;$("#cleanupModal").classList.add("open")});
 $("#cleanupCancel1")?.addEventListener("click",()=>$("#cleanupModal").classList.remove("open"));$("#cleanupContinue")?.addEventListener("click",()=>{$("#cleanupStep1").classList.add("hidden");$("#cleanupStep2").classList.remove("hidden")});$("#cleanupBack")?.addEventListener("click",()=>{$("#cleanupStep2").classList.add("hidden");$("#cleanupStep1").classList.remove("hidden")});
 function validateCleanupFinal(){$("#cleanupExecute").disabled=!($("#cleanupPhrase").value.trim()==="ELIMINAR DATOS"&&$("#cleanupFinalCheck").checked)}$("#cleanupPhrase")?.addEventListener("input",validateCleanupFinal);$("#cleanupFinalCheck")?.addEventListener("change",validateCleanupFinal);
-async function deleteCollectionInBatches(name){let total=0;while(true){let s=await getDocs(query(collection(db,name),limit(200)));if(s.empty)break;let b=writeBatch(db);s.docs.forEach(d=>b.delete(d.ref));await b.commit();total+=s.size;$("#cleanupProgress").textContent=`Eliminando ${CLEAN_LABELS[name]}: ${total}...`;if(s.size<200)break}return total}
+async function deleteCollectionInBatches(name){
+ let total=0;
+ while(true){
+  const snap=await getDocs(query(collection(db,name),limit(100)));
+  if(snap.empty)break;
+  for(const d of snap.docs){await deleteDoc(d.ref);total++;$("#cleanupProgress").textContent=`Eliminando ${CLEAN_LABELS[name]}: ${total}...`}
+  if(snap.size<100)break;
+ }
+ return total
+}
 $("#cleanupExecute")?.addEventListener("click",async()=>{let s=selectedCleanup();if(!s.length||$("#cleanupPhrase").value.trim()!=="ELIMINAR DATOS"||!$("#cleanupFinalCheck").checked)return;$("#cleanupExecute").disabled=true;let r=[];try{for(let n of s)r.push(`${CLEAN_LABELS[n]}: ${await deleteCollectionInBatches(n)}`);$("#cleanupProgress").textContent="✓ Limpieza terminada. "+r.join(" · ");document.querySelectorAll("[data-clean]").forEach(x=>x.checked=false);updateCleanupUI();setTimeout(()=>{$("#cleanupModal").classList.remove("open");refreshAllData(true)},1800)}catch(e){$("#cleanupProgress").textContent="Error: "+(e.message||"No fue posible completar la limpieza.");$("#cleanupExecute").disabled=false}});
